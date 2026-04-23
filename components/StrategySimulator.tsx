@@ -206,18 +206,18 @@ const presets = {
 const featureCards = [
   {
     icon: Radar,
-    title: "策略先模拟，再上线",
-    desc: "把定价、免费额度、模型组合先放进虚拟市场里跑一遍，降低真实试错成本。",
+    title: "策略先模拟,再上线",
+    desc: "把定价、免费额度、模型组合先放进虚拟市场里跑一遍,降低真实试错成本。",
   },
   {
     icon: Layers3,
     title: "用户 / 成本 / 留存联动",
-    desc: "不是单看一个转化率，而是把活跃、调用、成本、利润放在同一个推演框架中。",
+    desc: "不是单看一个转化率,而是把活跃、调用、成本、利润放在同一个推演框架中。",
   },
   {
     icon: Target,
     title: "给经营决策一个答案",
-    desc: "帮助团队快速判断：该追增长、追利润，还是追更平衡的策略。",
+    desc: "帮助团队快速判断:该追增长、追利润,还是追更平衡的策略。",
   },
 ];
 
@@ -235,7 +235,7 @@ const workflow = [
   {
     step: "03",
     title: "比较经营结果",
-    desc: "输出收入、成本、利润、留存和累计趋势，辅助决策。",
+    desc: "输出收入、成本、利润、留存和累计趋势,辅助决策。",
   },
 ];
 
@@ -335,10 +335,10 @@ export default function StrategySimulatorP0Demo() {
 
   const recommendation =
     current.summary.profit > comparison.summary.profit
-      ? "当前策略在利润上更优，更适合作为本轮上线候选。"
+      ? "当前策略在利润上更优,更适合作为本轮上线候选。"
       : current.summary.retention > comparison.summary.retention
-        ? "当前策略在留存上更稳，更适合增长阶段做投放验证。"
-        : "当前策略整体弱于对照策略，建议继续调整价格或模型结构。";
+        ? "当前策略在留存上更稳,更适合增长阶段做投放验证。"
+        : "当前策略整体弱于对照策略,建议继续调整价格或模型结构。";
 
   return (
     <div className="min-h-screen bg-[#F6F7FB] text-slate-900">
@@ -352,11 +352,11 @@ export default function StrategySimulatorP0Demo() {
               AI Strategy OS · Product Demo
             </Badge>
             <h1 className="mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 md:text-6xl md:leading-[1.05]">
-              不要在真实用户身上试错，
+              不要在真实用户身上试错,
               <span className="block">先在虚拟世界里跑策略。</span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 md:text-lg">
-              SimulAI Strategy Lab 是一个面向 AI 产品的策略模拟台。它把用户行为、模型成本、定价机制和留存变化放进同一个推演系统里，帮助团队在上线前就看到策略的大概率结果。
+              SimulAI Strategy Lab 是一个面向 AI 产品的策略模拟台。它把用户行为、模型成本、定价机制和留存变化放进同一个推演系统里,帮助团队在上线前就看到策略的大概率结果。
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <a href="#demo">
@@ -433,8 +433,8 @@ export default function StrategySimulatorP0Demo() {
       <section id="features" className="mx-auto max-w-7xl px-6 py-20 md:px-10">
         <SectionTitle
           eyebrow="Why this product"
-          title="它不是报表工具，而是策略决策引擎。"
-          desc="传统 BI 只能告诉你发生了什么，而策略模拟台的价值在于告诉你：如果这么做，接下来可能会发生什么。"
+          title="它不是报表工具,而是策略决策引擎。"
+          desc="传统 BI 只能告诉你发生了什么,而策略模拟台的价值在于告诉你:如果这么做,接下来可能会发生什么。"
         />
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {featureCards.map((item, index) => {
@@ -467,7 +467,7 @@ export default function StrategySimulatorP0Demo() {
           <SectionTitle
             eyebrow="How it works"
             title="一个适合 AI 产品团队的最小世界模型。"
-            desc="P0 版本先聚焦最重要的三层：用户行为、模型成本、经营输出。先让系统能回答问题，再逐步提升真实性和复杂度。"
+            desc="P0 版本先聚焦最重要的三层:用户行为、模型成本、经营输出。先让系统能回答问题,再逐步提升真实性和复杂度。"
           />
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {workflow.map((item) => (
@@ -489,8 +489,8 @@ export default function StrategySimulatorP0Demo() {
       <section id="demo" className="mx-auto max-w-7xl px-6 py-20 md:px-10">
         <SectionTitle
           eyebrow="Interactive demo"
-          title="直接调参数，实时看策略结果。"
-          desc="下面这部分是产品演示区。你可以把它理解成经营控制台的 P0 版本，用于快速做策略讨论、对照测试和方案判断。"
+          title="直接调参数,实时看策略结果。"
+          desc="下面这部分是产品演示区。你可以把它理解成经营控制台的 P0 版本,用于快速做策略讨论、对照测试和方案判断。"
         />
 
         <div className="mt-12 grid gap-6 xl:grid-cols-[380px_1fr]">
@@ -525,7 +525,7 @@ export default function StrategySimulatorP0Demo() {
                   max={39}
                   step={1}
                   suffix=" 元"
-                  description="影响收入，也会提高价格敏感用户的流失风险。"
+                  description="影响收入,也会提高价格敏感用户的流失风险。"
                   onChange={(v) => updateParam("price", v)}
                 />
                 <ParameterSlider
@@ -535,7 +535,7 @@ export default function StrategySimulatorP0Demo() {
                   max={30}
                   step={1}
                   suffix=" 次"
-                  description="提升体验和活跃，但会削弱短期变现。"
+                  description="提升体验和活跃,但会削弱短期变现。"
                   onChange={(v) => updateParam("freeQuota", v)}
                 />
                 <ParameterSlider
@@ -545,7 +545,7 @@ export default function StrategySimulatorP0Demo() {
                   max={100}
                   step={1}
                   suffix="%"
-                  description="比例越高，成本越低，但质量和满意度可能下降。"
+                  description="比例越高,成本越低,但质量和满意度可能下降。"
                   onChange={(v) => updateParam("cheapRatio", v / 100)}
                 />
                 <ParameterSlider
@@ -586,7 +586,7 @@ export default function StrategySimulatorP0Demo() {
                     <div className="font-medium text-emerald-900">策略建议</div>
                     <p className="mt-2 text-sm leading-7 text-emerald-900/80">{recommendation}</p>
                     <p className="mt-3 text-xs leading-6 text-emerald-800/70">
-                      当前 blended cost ≈ {current.summary.blendedCost} / 调用，累计调用 {current.summary.totalCalls.toLocaleString()} 次。
+                      当前 blended cost ≈ {current.summary.blendedCost} / 调用,累计调用 {current.summary.totalCalls.toLocaleString()} 次。
                     </p>
                   </div>
                 </div>
@@ -654,8 +654,8 @@ export default function StrategySimulatorP0Demo() {
                         </button>
                       ))}
                       <div className="rounded-3xl bg-slate-100 p-4 text-sm leading-7 text-slate-700">
-                        对照策略利润：<span className="font-semibold">¥ {comparison.summary.profit.toLocaleString()}</span><br />
-                        对照策略留存：<span className="font-semibold">{comparison.summary.retention}%</span>
+                        对照策略利润:<span className="font-semibold">¥ {comparison.summary.profit.toLocaleString()}</span><br />
+                        对照策略留存:<span className="font-semibold">{comparison.summary.retention}%</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -700,19 +700,19 @@ export default function StrategySimulatorP0Demo() {
                     <div className="rounded-3xl border border-slate-200 p-5">
                       <div className="flex items-center gap-2 text-base font-medium text-slate-950"><Users className="h-4 w-4" /> 用户世界</div>
                       <p className="mt-3 text-sm leading-7 text-slate-600">
-                        使用轻度、普通、重度三类用户，并加入价格敏感度与参与度差异，模拟真实产品中的行为分层。
+                        使用轻度、普通、重度三类用户,并加入价格敏感度与参与度差异,模拟真实产品中的行为分层。
                       </p>
                     </div>
                     <div className="rounded-3xl border border-slate-200 p-5">
                       <div className="flex items-center gap-2 text-base font-medium text-slate-950"><Blocks className="h-4 w-4" /> 成本结构</div>
                       <p className="mt-3 text-sm leading-7 text-slate-600">
-                        用廉价模型与高质量模型的配比，粗略近似不同推理质量与调用成本之间的经营权衡。
+                        用廉价模型与高质量模型的配比,粗略近似不同推理质量与调用成本之间的经营权衡。
                       </p>
                     </div>
                     <div className="rounded-3xl border border-slate-200 p-5">
                       <div className="flex items-center gap-2 text-base font-medium text-slate-950"><Activity className="h-4 w-4" /> 经营输出</div>
                       <p className="mt-3 text-sm leading-7 text-slate-600">
-                        输出收入、成本、利润、留存、活跃趋势，为策略讨论提供统一的量化语言。
+                        输出收入、成本、利润、留存、活跃趋势,为策略讨论提供统一的量化语言。
                       </p>
                     </div>
                   </CardContent>
@@ -723,47 +723,7 @@ export default function StrategySimulatorP0Demo() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 pb-20 md:px-10">
-        <Card className="overflow-hidden rounded-[36px] border border-slate-200 bg-slate-950 text-white shadow-xl">
-          <CardContent className="grid gap-8 p-8 md:grid-cols-[1.1fr_0.9fr] md:p-10">
-            <div>
-              <div className="text-sm text-slate-400">For AI Product Teams</div>
-              <h3 className="mt-3 text-3xl font-semibold tracking-tight">把这个 Demo，继续升级成真正的经营控制台。</h3>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
-                下一步可以接入真实日志、分渠道用户、实验结果、模型路由和更复杂的世界模型，让它从“演示系统”变成“上线前的决策系统”。
-              </p>
-              <div className="mt-7 flex flex-wrap gap-4">
-                <Button className="rounded-2xl bg-white text-slate-950 hover:bg-slate-100">查看下一阶段 Roadmap</Button>
-                <Button variant="secondary" className="rounded-2xl border border-white/10 bg-white/5 text-white hover:bg-white/10">
-                  导出融资演示版
-                </Button>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl bg-white/5 p-5">
-                <div className="text-sm text-slate-400">P1</div>
-                <div className="mt-2 text-lg font-semibold">接入真实数据</div>
-                <p className="mt-2 text-sm leading-6 text-slate-300">日志、留存 cohort、模型调用成本、渠道标签。</p>
-              </div>
-              <div className="rounded-3xl bg-white/5 p-5">
-                <div className="text-sm text-slate-400">P2</div>
-                <div className="mt-2 text-lg font-semibold">自动策略搜索</div>
-                <p className="mt-2 text-sm leading-6 text-slate-300">让系统自动寻找更优定价与模型路由组合。</p>
-              </div>
-              <div className="rounded-3xl bg-white/5 p-5">
-                <div className="text-sm text-slate-400">P3</div>
-                <div className="mt-2 text-lg font-semibold">在线决策引擎</div>
-                <p className="mt-2 text-sm leading-6 text-slate-300">从离线模拟走向实时推荐与策略调度。</p>
-              </div>
-              <div className="rounded-3xl bg-white/5 p-5">
-                <div className="text-sm text-slate-400">定位</div>
-                <div className="mt-2 text-lg font-semibold">Strategy OS</div>
-                <p className="mt-2 text-sm leading-6 text-slate-300">不是看报表，而是让团队先看到策略后果。</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+
     </div>
   );
 }
