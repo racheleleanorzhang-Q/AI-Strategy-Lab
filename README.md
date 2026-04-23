@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🧠 AI Strategy Simulator (P0)
 
-## Getting Started
+一个基于"世界模型"的策略模拟台 Demo  
+用于在上线前推演 AI 产品策略（定价 / 免费额度 / 模型成本）
 
-First, run the development server:
+## ✨ 能力
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- 模拟用户行为（留存 / 使用）
+- 模拟AI成本结构
+- 对比不同策略收益
+- 输出收入 / 成本 / 利润 / 留存
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎯 适用场景
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- AI产品定价策略
+- Agent商业模型设计
+- 增长策略推演
+- 投资/产品演示
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 在线Demo
 
-## Learn More
+👉 https://george-ipod-dakota-warming.trycloudflare.com
 
-To learn more about Next.js, take a look at the following resources:
+## 📌 核心理念
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> 不要在真实用户身上试错  
+> 先在"虚拟世界"里跑一遍策略
