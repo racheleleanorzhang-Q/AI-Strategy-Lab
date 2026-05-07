@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell } from "recharts";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
   RotateCcw,
@@ -25,6 +25,10 @@ import {
   ShieldCheck,
   Layers3,
   ChevronRight,
+  Menu,
+  X,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 function clamp(value: number, min: number, max: number) {
@@ -226,20 +230,31 @@ const workflow = [
     step: "01",
     title: "输入策略参数",
     desc: "设置价格、免费额度、模型配比、质量目标和用户规模。",
+    detail: "定价影响收入和价格敏感度用户的流失风险；免费额度提升体验和活跃但削弱短期变现；廉价模型占比决定成本结构；质量目标影响用户满意度基线。所有参数共同决定模拟的初始条件。",
   },
   {
     step: "02",
     title: "运行世界模型",
     desc: "模拟不同用户群在 30 天内的调用、留存和流失变化。",
+    detail: "世界模型将用户分为轻度、普通、重度三类，每类有独立的价格敏感度和参与度。每天根据当前策略参数计算每个用户的 churn risk、调用次数和付费行为，模拟真实产品中的行为分层。",
   },
   {
     step: "03",
     title: "比较经营结果",
     desc: "输出收入、成本、利润、留存和累计趋势,辅助决策。",
+    detail: "模拟结束后，系统输出总收入、总成本、净利润、期末留存率等核心指标，以及每日趋势曲线。你可以切换不同策略模板进行对比，快速判断该追增长、追利润还是追平衡。",
   },
 ];
 
 function NavBar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navLinks = [
+    { label: "能力", href: "#features" },
+    { label: "机制", href: "#how" },
+    { label: "Demo", href: "#demo" },
+  ];
+
   return (
     <div className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-10">
@@ -252,15 +267,65 @@ function NavBar() {
             <div className="text-xs text-slate-500">世界模型驱动的 AI 策略模拟台</div>
           </div>
         </div>
+
+        {/* Desktop nav */}
         <div className="hidden items-center gap-8 text-sm text-slate-600 md:flex">
-          <a href="#features" className="transition hover:text-slate-900">能力</a>
-          <a href="#how" className="transition hover:text-slate-900">机制</a>
-          <a href="#demo" className="transition hover:text-slate-900">Demo</a>
+          {navLinks.map((link) => (
+            <a key={link.href} href={link.href} className="transition hover:text-slate-900">
+              {link.label}
+            </a>
+          ))}
+          <a href="mailto:rachel.xiaqy@gmail.com?subject=AI%20Strategy%20Lab%20%E6%BC%94%E7%A4%BA%E8%AF%B7%E6%B1%82&body=%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E6%83%B3%E4%BA%86%E8%A7%A3%20AI%20Strategy%20Lab%20%E7%9A%84%E8%AF%A6%E7%BB%86%E5%8A%9F%E8%83%BD%E3%80%82" target="_blank" rel="noopener">
+            <Button className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800">
+              请求演示
+            </Button>
+          </a>
         </div>
-        <Button className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800">
-          请求演示
-        </Button>
+
+        {/* Mobile hamburger */}
+        <button
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white md:hidden"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="菜单"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden overflow-hidden border-t border-slate-200/60 bg-white"
+          >
+            <div className="mx-auto max-w-7xl px-6 py-4 md:px-10 space-y-1">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                >
+                  {link.label}
+                </a>
+              ))}
+              <a
+                href="mailto:rachel.xiaqy@gmail.com?subject=AI%20Strategy%20Lab%20%E6%BC%94%E7%A4%BA%E8%AF%B7%E6%B1%82"
+                target="_blank"
+                rel="noopener"
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white hover:bg-slate-800"
+              >
+                请求演示
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -307,6 +372,23 @@ function SectionTitle({ eyebrow, title, desc }: { eyebrow: string; title: string
       <div className="text-sm font-medium text-slate-500">{eyebrow}</div>
       <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h2>
       <p className="mt-4 text-base leading-7 text-slate-600">{desc}</p>
+    </div>
+  );
+}
+
+function ChartSkeleton({ height = 240 }: { height?: number }) {
+  return (
+    <div className="flex flex-col items-center justify-center" style={{ height }}>
+      <div className="flex w-full items-end gap-1 px-4">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-t bg-slate-200 animate-pulse"
+            style={{ height: `${20 + Math.sin(i * 0.5) * 30 + Math.random() * 40}%`, minHeight: 8 }}
+          />
+        ))}
+      </div>
+      <div className="mt-4 h-3 w-32 rounded bg-slate-200 animate-pulse" />
     </div>
   );
 }
@@ -407,21 +489,25 @@ export default function StrategySimulatorP0Demo() {
                     <div className="mt-2 text-xs text-slate-400">用户世界模型推演结果</div>
                   </div>
                   <div className="col-span-full h-[240px] rounded-3xl bg-white p-4 text-slate-900">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={current.history}>
-                        <defs>
-                          <linearGradient id="profitFill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="currentColor" stopOpacity={0.18} />
-                            <stop offset="95%" stopColor="currentColor" stopOpacity={0.02} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="day" />
-                        <YAxis />
-                        <Tooltip />
-                        <Area type="monotone" dataKey="cumulativeProfit" strokeWidth={2} fill="url(#profitFill)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    {current.history.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={current.history}>
+                          <defs>
+                            <linearGradient id="profitFill" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="currentColor" stopOpacity={0.18} />
+                              <stop offset="95%" stopColor="currentColor" stopOpacity={0.02} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis dataKey="day" />
+                          <YAxis />
+                          <Tooltip />
+                          <Area type="monotone" dataKey="cumulativeProfit" strokeWidth={2} fill="url(#profitFill)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <ChartSkeleton height={200} />
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -470,18 +556,40 @@ export default function StrategySimulatorP0Demo() {
             desc="P0 版本先聚焦最重要的三层:用户行为、模型成本、经营输出。先让系统能回答问题,再逐步提升真实性和复杂度。"
           />
           <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {workflow.map((item) => (
-              <Card key={item.step} className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
-                <CardContent className="p-6">
-                  <div className="text-sm font-medium text-slate-500">{item.step}</div>
-                  <div className="mt-3 text-xl font-semibold text-slate-950">{item.title}</div>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.desc}</p>
-                  <div className="mt-6 flex items-center text-sm font-medium text-slate-900">
-                    查看详情 <ChevronRight className="ml-1 h-4 w-4" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {workflow.map((item, idx) => {
+              const [expanded, setExpanded] = useState(false);
+              return (
+                <Card key={item.step} className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="text-sm font-medium text-slate-500">{item.step}</div>
+                    <div className="mt-3 text-xl font-semibold text-slate-950">{item.title}</div>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.desc}</p>
+                    <button
+                      onClick={() => setExpanded(!expanded)}
+                      className="mt-6 flex items-center text-sm font-medium text-slate-900 transition hover:text-slate-600"
+                    >
+                      {expanded ? "收起详情" : "查看详情"}{" "}
+                      {expanded ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronRight className="ml-1 h-4 w-4" />}
+                    </button>
+                    <AnimatePresence>
+                      {expanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm leading-7 text-slate-600">
+                            {item.detail}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -723,7 +831,27 @@ export default function StrategySimulatorP0Demo() {
         </div>
       </section>
 
-
+      <footer className="border-t border-slate-200 bg-white/60">
+        <div className="mx-auto max-w-7xl px-6 py-10 md:px-10">
+          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
+            <div>
+              <div className="text-sm font-medium text-slate-900">SimulAI Strategy Lab</div>
+              <div className="mt-1 text-xs text-slate-500">世界模型驱动的 AI 策略模拟台 · P0 Demo</div>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-slate-500">
+              <a href="https://bigrich88888.xin/" target="_blank" rel="noopener" className="transition hover:text-slate-900">
+                Rachel Xia 的个人网站
+              </a>
+              <a href="mailto:rachel.xiaqy@gmail.com" className="transition hover:text-slate-900">
+                联系作者
+              </a>
+            </div>
+          </div>
+          <div className="mt-6 border-t border-slate-100 pt-6 text-center text-xs text-slate-400">
+            &copy; {new Date().getFullYear()} Rachel Xia. Built with Next.js + Recharts.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
