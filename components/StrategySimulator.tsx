@@ -848,7 +848,8 @@ export default function StrategySimulatorP0Demo() {
             </div>
           </div>
           <div className="mt-6 border-t border-slate-100 pt-6 text-center text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} Rachel Xia. Built with Next.js + Recharts.
+            &copy; {new Date().getFullYear()} Rachel Xia. All rights reserved.<br />
+            Build with &hearts; and hermes R
           </div>
         </div>
       </footer>
