@@ -31,151 +31,9 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function seededRandom(seed: number) {
-  let s = seed % 2147483647;
-  if (s <= 0) s += 2147483646;
-  return function () {
-    s = (s * 16807) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
-
-function simulateStrategy(params: any, seed: number = 42) {
-  const rand = seededRandom(seed);
-  const users = [];
-  const userCount = params.userCount;
-
-  for (let i = 0; i < userCount; i++) {
-    const r = rand();
-    let type = "normal";
-    if (r < 0.2) type = "light";
-    else if (r > 0.8) type = "heavy";
-
-    const baseUsage =
-      type === "light"
-        ? 1 + Math.floor(rand() * 3)
-        : type === "heavy"
-          ? 8 + Math.floor(rand() * 8)
-          : 3 + Math.floor(rand() * 5);
-    const priceSensitivity =
-      type === "light"
-        ? 0.6 + rand() * 0.3
-        : type === "heavy"
-          ? 0.15 + rand() * 0.25
-          : 0.3 + rand() * 0.35;
-    const engagement =
-      type === "light"
-        ? 0.45 + rand() * 0.15
-        : type === "heavy"
-          ? 0.75 + rand() * 0.2
-          : 0.55 + rand() * 0.2;
-
-    users.push({
-      active: true,
-      type,
-      baseUsage,
-      priceSensitivity,
-      engagement,
-      remainingFreeQuota: params.freeQuota,
-      monthlySpend: 0,
-    });
-  }
-
-  const cheapModelCost = 0.002;
-  const expensiveModelCost = 0.02;
-  const blendedCost = params.cheapRatio * cheapModelCost + (1 - params.cheapRatio) * expensiveModelCost;
-
-  const history = [];
-  let totalRevenue = 0;
-  let totalCost = 0;
-  let totalCalls = 0;
-
-  for (let day = 1; day <= params.days; day++) {
-    let activeUsers = 0;
-    let dayRevenue = 0;
-    let dayCost = 0;
-    let dayCalls = 0;
-
-    users.forEach((user) => {
-      if (!user.active) return;
-
-      let churnRisk = 0.01;
-      churnRisk += Math.max(0, params.price - 19) * 0.004 * user.priceSensitivity;
-      churnRisk += Math.max(0, params.qualityTarget - (params.cheapRatio * 60 + (1 - params.cheapRatio) * 95)) * 0.0008;
-      churnRisk -= params.freeQuota > 0 ? 0.003 : 0;
-      churnRisk -= user.engagement * 0.01;
-      churnRisk = clamp(churnRisk, 0.003, 0.18);
-
-      if (rand() < churnRisk) {
-        user.active = false;
-        return;
-      }
-
-      activeUsers += 1;
-
-      let usageMultiplier = 1;
-      if (params.freeQuota > 0 && user.remainingFreeQuota > 0) usageMultiplier += 0.25;
-      if (params.qualityTarget > 80) usageMultiplier += 0.08;
-      if (params.price < 15) usageMultiplier += 0.1;
-
-      const callsToday = Math.max(0, Math.round(user.baseUsage * usageMultiplier * (0.8 + rand() * 0.4)));
-      let paidCalls = callsToday;
-
-      if (user.remainingFreeQuota > 0) {
-        const freeUsed = Math.min(user.remainingFreeQuota, callsToday);
-        paidCalls -= freeUsed;
-        user.remainingFreeQuota -= freeUsed;
-      }
-
-      const pricePerCall = params.price / 100;
-      const revenueToday = paidCalls * pricePerCall;
-      const costToday = callsToday * blendedCost;
-
-      user.monthlySpend += revenueToday;
-      dayRevenue += revenueToday;
-      dayCost += costToday;
-      dayCalls += callsToday;
-    });
-
-    totalRevenue += dayRevenue;
-    totalCost += dayCost;
-    totalCalls += dayCalls;
-
-    history.push({
-      day,
-      activeUsers,
-      revenue: Number(dayRevenue.toFixed(2)),
-      cost: Number(dayCost.toFixed(2)),
-      profit: Number((dayRevenue - dayCost).toFixed(2)),
-      cumulativeProfit: Number((totalRevenue - totalCost).toFixed(2)),
-      calls: dayCalls,
-    });
-  }
-
-  const endingActive = history[history.length - 1]?.activeUsers ?? 0;
-  const retention = userCount ? (endingActive / userCount) * 100 : 0;
-  const avgRevenuePerUser = userCount ? totalRevenue / userCount : 0;
-  const avgCostPerUser = userCount ? totalCost / userCount : 0;
-
-  return {
-    summary: {
-      revenue: Number(totalRevenue.toFixed(2)),
-      cost: Number(totalCost.toFixed(2)),
-      profit: Number((totalRevenue - totalCost).toFixed(2)),
-      retention: Number(retention.toFixed(1)),
-      activeUsers: endingActive,
-      avgRevenuePerUser: Number(avgRevenuePerUser.toFixed(2)),
-      avgCostPerUser: Number(avgCostPerUser.toFixed(2)),
-      totalCalls,
-      blendedCost: Number(blendedCost.toFixed(4)),
-    },
-    history,
-  };
-}
+// ── 策略模拟引擎 (解耦后的独立模块) ──
+import { simulate, listEngines, ruleEngineInfo } from "@/lib/engine";
+import type { SimulationParams } from "@/lib/engine";
 
 const presets = {
   balanced: {
@@ -398,8 +256,8 @@ export default function StrategySimulatorP0Demo() {
   const [runVersion, setRunVersion] = useState(1);
   const [comparePreset, setComparePreset] = useState<keyof typeof presets>("premium");
 
-  const current = useMemo(() => simulateStrategy(params, 42 + runVersion), [params, runVersion]);
-  const comparison = useMemo(() => simulateStrategy(presets[comparePreset], 84), [comparePreset]);
+  const current = useMemo(() => simulate("rule", params as SimulationParams, 42 + runVersion), [params, runVersion]);
+  const comparison = useMemo(() => simulate("rule", presets[comparePreset] as SimulationParams, 84), [comparePreset]);
 
   const comparisonBars = [
     { name: "当前策略", profit: current.summary.profit, retention: current.summary.retention },
