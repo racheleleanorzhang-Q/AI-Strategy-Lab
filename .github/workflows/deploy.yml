@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+# Grant write permission to GITHUB_TOKEN
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
