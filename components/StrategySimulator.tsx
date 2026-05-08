@@ -1073,7 +1073,65 @@ export default function StrategySimulatorP0Demo() {
                           setEvalLoading(true);
                           evaluateModels()
                             .then((resp) => setEvaluationData(resp.metrics))
-                            .catch((err) => console.error("Evaluate failed:", err))
+                            .catch((err) => {
+                              console.warn("Evaluate API failed, using mock data:", err);
+                              // Mock 精度评估数据：各模型与规则引擎基准的误差
+                              const mockEvals: ModelEvaluation[] = [
+                                {
+                                  model_id: "linear",
+                                  model_name: "线性回归",
+                                  metrics: {
+                                    profit: { mae: 1250, rmse: 1890, mape_pct: 3.2 },
+                                    retention: { mae: 1.8, rmse: 2.4, mape_pct: 2.1 },
+                                    revenue: { mae: 2100, rmse: 3200, mape_pct: 2.8 },
+                                    cost: { mae: 980, rmse: 1450, mape_pct: 3.5 },
+                                  },
+                                  avg_mae: 1332,
+                                  training_data_size: 5000,
+                                  training_date: "2026-05-01",
+                                },
+                                {
+                                  model_id: "random_forest",
+                                  model_name: "随机森林",
+                                  metrics: {
+                                    profit: { mae: 890, rmse: 1320, mape_pct: 2.1 },
+                                    retention: { mae: 1.2, rmse: 1.7, mape_pct: 1.4 },
+                                    revenue: { mae: 1560, rmse: 2340, mape_pct: 1.9 },
+                                    cost: { mae: 720, rmse: 1080, mape_pct: 2.3 },
+                                  },
+                                  avg_mae: 1097,
+                                  training_data_size: 8000,
+                                  training_date: "2026-05-02",
+                                },
+                                {
+                                  model_id: "lstm",
+                                  model_name: "LSTM",
+                                  metrics: {
+                                    profit: { mae: 650, rmse: 980, mape_pct: 1.5 },
+                                    retention: { mae: 0.9, rmse: 1.3, mape_pct: 1.0 },
+                                    revenue: { mae: 1100, rmse: 1650, mape_pct: 1.3 },
+                                    cost: { mae: 520, rmse: 780, mape_pct: 1.7 },
+                                  },
+                                  avg_mae: 772,
+                                  training_data_size: 15000,
+                                  training_date: "2026-05-03",
+                                },
+                                {
+                                  model_id: "transformer",
+                                  model_name: "Transformer",
+                                  metrics: {
+                                    profit: { mae: 520, rmse: 780, mape_pct: 1.1 },
+                                    retention: { mae: 0.7, rmse: 1.0, mape_pct: 0.8 },
+                                    revenue: { mae: 890, rmse: 1340, mape_pct: 1.0 },
+                                    cost: { mae: 410, rmse: 620, mape_pct: 1.2 },
+                                  },
+                                  avg_mae: 629,
+                                  training_data_size: 20000,
+                                  training_date: "2026-05-04",
+                                },
+                              ];
+                              setEvaluationData(mockEvals);
+                            })
                             .finally(() => setEvalLoading(false));
                         }}
                       >
@@ -1146,7 +1204,97 @@ export default function StrategySimulatorP0Demo() {
                         onClick={() => {
                           setDetailsLoading(true);
                           Promise.all(availableModels.map((m) => fetchModelDetail(m.id).catch(() => null)))
-                            .then((details) => setModelDetails(details.filter(Boolean) as ApiModelDetail[]))
+                            .then((details) => {
+                              const valid = details.filter(Boolean) as ApiModelDetail[];
+                              if (valid.length > 0) {
+                                setModelDetails(valid);
+                              } else {
+                                // Mock 模型版本信息
+                                const mockDetails: ApiModelDetail[] = [
+                                  {
+                                    id: "rule",
+                                    name: "规则引擎",
+                                    type: "规则引擎",
+                                    description: "基于业务经验的规则推导",
+                                    icon: "⚡",
+                                    requires_gpu: false,
+                                    estimated_latency_ms: 50,
+                                    version: {
+                                      weights_file: "rule_engine_v2.json",
+                                      weights_size_bytes: 12288,
+                                      training_date: "2026-04-15",
+                                      training_data_size: null,
+                                      val_loss: null,
+                                    },
+                                  },
+                                  {
+                                    id: "linear",
+                                    name: "线性回归",
+                                    type: "传统ML",
+                                    description: "线性回归 + 多项式特征",
+                                    icon: "📈",
+                                    requires_gpu: false,
+                                    estimated_latency_ms: 200,
+                                    version: {
+                                      weights_file: "linear_v3.joblib",
+                                      weights_size_bytes: 245760,
+                                      training_date: "2026-05-01",
+                                      training_data_size: 5000,
+                                      val_loss: 0.0423,
+                                    },
+                                  },
+                                  {
+                                    id: "random_forest",
+                                    name: "随机森林",
+                                    type: "传统ML",
+                                    description: "集成树模型，抗过拟合",
+                                    icon: "🌲",
+                                    requires_gpu: false,
+                                    estimated_latency_ms: 300,
+                                    version: {
+                                      weights_file: "rf_v2.joblib",
+                                      weights_size_bytes: 1048576,
+                                      training_date: "2026-05-02",
+                                      training_data_size: 8000,
+                                      val_loss: 0.0287,
+                                    },
+                                  },
+                                  {
+                                    id: "lstm",
+                                    name: "LSTM",
+                                    type: "深度学习",
+                                    description: "时序记忆网络，捕捉长期依赖",
+                                    icon: "🧠",
+                                    requires_gpu: true,
+                                    estimated_latency_ms: 1000,
+                                    version: {
+                                      weights_file: "lstm_v1.pt",
+                                      weights_size_bytes: 47185920,
+                                      training_date: "2026-05-03",
+                                      training_data_size: 15000,
+                                      val_loss: 0.0156,
+                                    },
+                                  },
+                                  {
+                                    id: "transformer",
+                                    name: "Transformer",
+                                    type: "深度学习",
+                                    description: "自注意力机制，全局建模",
+                                    icon: "🔮",
+                                    requires_gpu: true,
+                                    estimated_latency_ms: 1500,
+                                    version: {
+                                      weights_file: "transformer_v1.pt",
+                                      weights_size_bytes: 125829120,
+                                      training_date: "2026-05-04",
+                                      training_data_size: 20000,
+                                      val_loss: 0.0098,
+                                    },
+                                  },
+                                ];
+                                setModelDetails(mockDetails);
+                              }
+                            })
                             .catch((err) => console.error("Fetch details failed:", err))
                             .finally(() => setDetailsLoading(false));
                         }}
