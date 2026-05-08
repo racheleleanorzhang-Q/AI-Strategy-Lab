@@ -911,14 +911,11 @@ export default function StrategySimulatorP0Demo() {
 
               <TabsContent value="modelCompare">
                 <div className="space-y-6">
-                  {/* ── 子区域 A: 多模型并排对比 ── */}
-                  <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg">多模型并排对比</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* 模型选择 */}
-                      <div className="flex flex-wrap gap-2">
+                  {/* ── 模型选择 + 对比按钮 ── */}
+                  <Card className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                    <CardContent className="p-5">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-sm font-medium text-slate-700">选择模型：</span>
                         {availableModels.map((m) => (
                           <button
                             key={m.id}
@@ -929,437 +926,397 @@ export default function StrategySimulatorP0Demo() {
                                   : [...prev, m.id]
                               );
                             }}
-                            className={`rounded-2xl border px-4 py-2 text-sm font-medium transition ${
+                            className={`rounded-xl border px-3 py-1.5 text-sm font-medium transition ${
                               compareSelected.includes(m.id)
                                 ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                             }`}
                           >
                             {m.icon} {m.name}
                           </button>
                         ))}
+                        <div className="ml-auto">
+                          <Button
+                            className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm"
+                            disabled={isComparing || compareSelected.length < 2}
+                            onClick={() => {
+                              setIsComparing(true);
+                              setCompareResults(null);
+                              compareModels(compareSelected, paramsToApi(params))
+                                .then((resp) => setCompareResults(resp.results))
+                                .catch((err) => {
+                                  console.warn("Compare API failed, using mock data:", err);
+                                  const base = currentLocal;
+                                  const seeds: Record<string, number> = {
+                                    rule: 1.0, linear: 0.95, random_forest: 1.02, lstm: 0.98, transformer: 1.05,
+                                  };
+                                  const names: Record<string, string> = {
+                                    rule: "规则引擎", linear: "线性回归", random_forest: "随机森林", lstm: "LSTM", transformer: "Transformer",
+                                  };
+                                  const results = compareSelected.map((id) => {
+                                    const s = seeds[id] || 1.0;
+                                    return {
+                                      model_id: id,
+                                      model_name: names[id] || id,
+                                      summary: {
+                                        revenue: Math.round(base.summary.revenue * s),
+                                        cost: Math.round(base.summary.cost * (s * 0.97)),
+                                        profit: Math.round(base.summary.profit * s),
+                                        retention: Math.min(100, Math.round(base.summary.retention * s)),
+                                        active_users: Math.round(base.summary.activeUsers * s),
+                                        avg_revenue_per_user: Math.round(base.summary.avgRevenuePerUser * s),
+                                        avg_cost_per_user: Math.round(base.summary.avgCostPerUser * s),
+                                        total_calls: Math.round(base.summary.totalCalls * s),
+                                        blended_cost: Math.round(base.summary.blendedCost * s),
+                                      },
+                                      history: base.history.map((h, i) => ({
+                                        day: h.day,
+                                        active_users: Math.round(h.activeUsers * s * (1 + Math.sin(i * 0.3) * 0.05)),
+                                        revenue: Math.round(h.revenue * s),
+                                        cost: Math.round(h.cost * s * 0.97),
+                                        profit: Math.round(h.profit * s),
+                                        cumulative_profit: Math.round(h.cumulativeProfit * s),
+                                        calls: Math.round(h.calls * s),
+                                      })),
+                                    };
+                                  });
+                                  setCompareResults(results);
+                                })
+                                .finally(() => setIsComparing(false));
+                            }}
+                          >
+                            {isComparing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Layers3 className="mr-2 h-4 w-4" />}
+                            {isComparing ? "对比中..." : "开始对比"}
+                          </Button>
+                        </div>
                       </div>
-                      <Button
-                        className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800"
-                        disabled={isComparing || compareSelected.length < 2}
-                        onClick={() => {
-                          setIsComparing(true);
-                          setCompareResults(null);
-                          compareModels(compareSelected, paramsToApi(params))
-                            .then((resp) => setCompareResults(resp.results))
-                            .catch((err) => {
-                              console.warn("Compare API failed, using mock data:", err);
-                              // Mock: 基于规则引擎结果生成多模型对比
-                              const base = currentLocal;
-                              const seeds: Record<string, number> = {
-                                rule: 1.0, linear: 0.95, random_forest: 1.02, lstm: 0.98, transformer: 1.05,
-                              };
-                              const names: Record<string, string> = {
-                                rule: "规则引擎", linear: "线性回归", random_forest: "随机森林", lstm: "LSTM", transformer: "Transformer",
-                              };
-                              const results = compareSelected.map((id) => {
-                                const s = seeds[id] || 1.0;
-                                return {
-                                  model_id: id,
-                                  model_name: names[id] || id,
-                                  summary: {
-                                    revenue: Math.round(base.summary.revenue * s),
-                                    cost: Math.round(base.summary.cost * (s * 0.97)),
-                                    profit: Math.round(base.summary.profit * s),
-                                    retention: Math.min(100, Math.round(base.summary.retention * s)),
-                                    active_users: Math.round(base.summary.activeUsers * s),
-                                    avg_revenue_per_user: Math.round(base.summary.avgRevenuePerUser * s),
-                                    avg_cost_per_user: Math.round(base.summary.avgCostPerUser * s),
-                                    total_calls: Math.round(base.summary.totalCalls * s),
-                                    blended_cost: Math.round(base.summary.blendedCost * s),
-                                  },
-                                  history: base.history.map((h, i) => ({
-                                    day: h.day,
-                                    active_users: Math.round(h.activeUsers * s * (1 + Math.sin(i * 0.3) * 0.05)),
-                                    revenue: Math.round(h.revenue * s),
-                                    cost: Math.round(h.cost * s * 0.97),
-                                    profit: Math.round(h.profit * s),
-                                    cumulative_profit: Math.round(h.cumulativeProfit * s),
-                                    calls: Math.round(h.calls * s),
-                                  })),
-                                };
-                              });
-                              setCompareResults(results);
-                            })
-                            .finally(() => setIsComparing(false));
-                        }}
-                      >
-                        {isComparing ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Layers3 className="mr-2 h-4 w-4" />
-                        )}
-                        {isComparing ? "对比中..." : "开始对比"}
-                      </Button>
-
-                      {/* 对比结果 */}
-                      {compareResults && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-                        >
-                          {compareResults.map((r) => {
-                            const color = modelColors[r.model_id] || "#64748b";
-                            return (
-                              <Card key={r.model_id} className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
-                                <CardContent className="p-5">
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <span className="text-lg">{availableModels.find((m) => m.id === r.model_id)?.icon || "⚡"}</span>
-                                    <span className="font-semibold text-slate-950">{r.model_name}</span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2 mb-4">
-                                    <div className="rounded-2xl bg-slate-50 p-3">
-                                      <div className="text-xs text-slate-500">利润</div>
-                                      <div className="text-base font-semibold text-slate-950">¥ {r.summary.profit?.toLocaleString() || "—"}</div>
-                                    </div>
-                                    <div className="rounded-2xl bg-slate-50 p-3">
-                                      <div className="text-xs text-slate-500">留存</div>
-                                      <div className="text-base font-semibold text-slate-950">{r.summary.retention?.toFixed(1) || "—"}%</div>
-                                    </div>
-                                    <div className="rounded-2xl bg-slate-50 p-3">
-                                      <div className="text-xs text-slate-500">收入</div>
-                                      <div className="text-base font-semibold text-slate-950">¥ {r.summary.revenue?.toLocaleString() || "—"}</div>
-                                    </div>
-                                    <div className="rounded-2xl bg-slate-50 p-3">
-                                      <div className="text-xs text-slate-500">成本</div>
-                                      <div className="text-base font-semibold text-slate-950">¥ {r.summary.cost?.toLocaleString() || "—"}</div>
-                                    </div>
-                                  </div>
-                                  {r.history.length > 0 && (
-                                    <div className="h-[140px]">
-                                      <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={r.history}>
-                                          <defs>
-                                            <linearGradient id={`fill-${r.model_id}`} x1="0" y1="0" x2="0" y2="1">
-                                              <stop offset="5%" stopColor={color} stopOpacity={0.15} />
-                                              <stop offset="95%" stopColor={color} stopOpacity={0.01} />
-                                            </linearGradient>
-                                          </defs>
-                                          <XAxis dataKey="day" tick={{ fontSize: 10 }} />
-                                          <YAxis tick={{ fontSize: 10 }} />
-                                          <Tooltip />
-                                          <Area type="monotone" dataKey="cumulativeProfit" stroke={color} fill={`url(#fill-${r.model_id})`} strokeWidth={2} />
-                                        </AreaChart>
-                                      </ResponsiveContainer>
-                                    </div>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            );
-                          })}
-                        </motion.div>
-                      )}
                     </CardContent>
                   </Card>
 
-                  {/* ── 子区域 B: 精度评估 ── */}
-                  <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg">精度评估（vs 规则引擎基准）</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <Button
-                        variant="outline"
-                        className="rounded-2xl"
-                        disabled={evalLoading}
-                        onClick={() => {
-                          setEvalLoading(true);
-                          evaluateModels()
-                            .then((resp) => setEvaluationData(resp.metrics))
-                            .catch((err) => {
-                              console.warn("Evaluate API failed, using mock data:", err);
-                              // Mock 精度评估数据：各模型与规则引擎基准的误差
-                              const mockEvals: ModelEvaluation[] = [
-                                {
-                                  model_id: "linear",
-                                  model_name: "线性回归",
-                                  metrics: {
-                                    profit: { mae: 1250, rmse: 1890, mape_pct: 3.2 },
-                                    retention: { mae: 1.8, rmse: 2.4, mape_pct: 2.1 },
-                                    revenue: { mae: 2100, rmse: 3200, mape_pct: 2.8 },
-                                    cost: { mae: 980, rmse: 1450, mape_pct: 3.5 },
-                                  },
-                                  avg_mae: 1332,
-                                  training_data_size: 5000,
-                                  training_date: "2026-05-01",
-                                },
-                                {
-                                  model_id: "random_forest",
-                                  model_name: "随机森林",
-                                  metrics: {
-                                    profit: { mae: 890, rmse: 1320, mape_pct: 2.1 },
-                                    retention: { mae: 1.2, rmse: 1.7, mape_pct: 1.4 },
-                                    revenue: { mae: 1560, rmse: 2340, mape_pct: 1.9 },
-                                    cost: { mae: 720, rmse: 1080, mape_pct: 2.3 },
-                                  },
-                                  avg_mae: 1097,
-                                  training_data_size: 8000,
-                                  training_date: "2026-05-02",
-                                },
-                                {
-                                  model_id: "lstm",
-                                  model_name: "LSTM",
-                                  metrics: {
-                                    profit: { mae: 650, rmse: 980, mape_pct: 1.5 },
-                                    retention: { mae: 0.9, rmse: 1.3, mape_pct: 1.0 },
-                                    revenue: { mae: 1100, rmse: 1650, mape_pct: 1.3 },
-                                    cost: { mae: 520, rmse: 780, mape_pct: 1.7 },
-                                  },
-                                  avg_mae: 772,
-                                  training_data_size: 15000,
-                                  training_date: "2026-05-03",
-                                },
-                                {
-                                  model_id: "transformer",
-                                  model_name: "Transformer",
-                                  metrics: {
-                                    profit: { mae: 520, rmse: 780, mape_pct: 1.1 },
-                                    retention: { mae: 0.7, rmse: 1.0, mape_pct: 0.8 },
-                                    revenue: { mae: 890, rmse: 1340, mape_pct: 1.0 },
-                                    cost: { mae: 410, rmse: 620, mape_pct: 1.2 },
-                                  },
-                                  avg_mae: 629,
-                                  training_data_size: 20000,
-                                  training_date: "2026-05-04",
-                                },
-                              ];
-                              setEvaluationData(mockEvals);
-                            })
-                            .finally(() => setEvalLoading(false));
-                        }}
-                      >
-                        {evalLoading ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Target className="mr-2 h-4 w-4" />
-                        )}
-                        {evalLoading ? "评估中..." : "运行评估"}
-                      </Button>
-
-                      {evaluationData && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="bg-slate-50">
-                                  <th className="px-4 py-3 text-left font-medium text-slate-700">模型</th>
-                                  <th className="px-4 py-3 text-right font-medium text-slate-700">利润 MAE</th>
-                                  <th className="px-4 py-3 text-right font-medium text-slate-700">利润 RMSE</th>
-                                  <th className="px-4 py-3 text-right font-medium text-slate-700">留存 MAPE</th>
-                                  <th className="px-4 py-3 text-right font-medium text-slate-700">收入 MAPE</th>
-                                  <th className="px-4 py-3 text-right font-medium text-slate-700">平均 MAE</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {evaluationData.map((ev, idx) => {
-                                  const isBest = ev.avg_mae === Math.min(...evaluationData.filter((e) => e.avg_mae != null).map((e) => e.avg_mae));
+                  {/* ── 合并趋势图 ── */}
+                  {compareResults && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Card className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                        <CardHeader>
+                          <CardTitle className="text-base">累计利润趋势对比</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <XAxis dataKey="day" />
+                                <YAxis />
+                                <Tooltip />
+                                <Legend />
+                                {compareResults.map((r) => {
+                                  const color = modelColors[r.model_id] || "#64748b";
                                   return (
-                                    <tr key={ev.model_id} className={`border-t border-slate-100 ${isBest ? "bg-emerald-50/50" : ""}`}>
-                                      <td className="px-4 py-3 font-medium text-slate-900">
-                                        {availableModels.find((m) => m.id === ev.model_id)?.icon} {ev.model_name}
-                                        {isBest && <span className="ml-1 text-xs text-emerald-600">★ 最优</span>}
-                                      </td>
-                                      <td className="px-4 py-3 text-right text-slate-700">¥ {ev.metrics.profit?.mae?.toLocaleString() || "—"}</td>
-                                      <td className="px-4 py-3 text-right text-slate-700">¥ {ev.metrics.profit?.rmse?.toLocaleString() || "—"}</td>
-                                      <td className="px-4 py-3 text-right text-slate-700">{ev.metrics.retention?.mape_pct?.toFixed(1) || "—"}%</td>
-                                      <td className="px-4 py-3 text-right text-slate-700">{ev.metrics.revenue?.mape_pct?.toFixed(1) || "—"}%</td>
-                                      <td className={`px-4 py-3 text-right font-semibold ${isBest ? "text-emerald-700" : "text-slate-700"}`}>
-                                        ¥ {ev.avg_mae?.toLocaleString() || "—"}
-                                      </td>
-                                    </tr>
+                                    <Line
+                                      key={r.model_id}
+                                      type="monotone"
+                                      data={r.history}
+                                      dataKey="cumulative_profit"
+                                      name={`${r.model_name} 利润`}
+                                      stroke={color}
+                                      strokeWidth={2}
+                                      dot={false}
+                                    />
                                   );
                                 })}
-                              </tbody>
-                            </table>
+                              </LineChart>
+                            </ResponsiveContainer>
                           </div>
-                          <p className="mt-3 text-xs text-slate-500">
-                            基准: 规则引擎 · 评估参数: 价格 ¥19 / 免费额度 12 / 廉价模型占比 65% / 质量目标 82 / 用户 1200 / 30 天
-                          </p>
-                        </motion.div>
-                      )}
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  )}
 
-                  {/* ── 子区域 C: 模型版本信息 ── */}
-                  <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg">模型版本信息</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <Button
-                        variant="outline"
-                        className="rounded-2xl"
-                        disabled={detailsLoading}
-                        onClick={() => {
-                          setDetailsLoading(true);
-                          Promise.all(availableModels.map((m) => fetchModelDetail(m.id).catch(() => null)))
-                            .then((details) => {
-                              const valid = details.filter(Boolean) as ApiModelDetail[];
-                              if (valid.length > 0) {
-                                setModelDetails(valid);
-                              } else {
-                                // Mock 模型版本信息
-                                const mockDetails: ApiModelDetail[] = [
+                  {/* ── 指标网格 ── */}
+                  {compareResults && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"
+                    >
+                      {compareResults.map((r) => {
+                        const color = modelColors[r.model_id] || "#64748b";
+                        return (
+                          <Card key={r.model_id} className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-base">{availableModels.find((m) => m.id === r.model_id)?.icon || "⚡"}</span>
+                                <span className="text-sm font-semibold text-slate-950">{r.model_name}</span>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-slate-500">利润</span>
+                                  <span className="font-semibold text-slate-900">¥ {r.summary.profit?.toLocaleString() || "—"}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-slate-500">留存</span>
+                                  <span className="font-semibold text-slate-900">{r.summary.retention?.toFixed(1) || "—"}%</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-slate-500">收入</span>
+                                  <span className="font-semibold text-slate-900">¥ {r.summary.revenue?.toLocaleString() || "—"}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-slate-500">成本</span>
+                                  <span className="font-semibold text-slate-900">¥ {r.summary.cost?.toLocaleString() || "—"}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-slate-500">调用</span>
+                                  <span className="font-semibold text-slate-900">{r.summary.total_calls?.toLocaleString() || "—"}</span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+
+                  {/* ── 底部双列：精度评估 + 版本信息 ── */}
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    {/* 精度评估 */}
+                    <Card className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="text-base">精度评估（vs 规则引擎基准）</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <Button
+                          variant="outline"
+                          className="rounded-xl text-sm"
+                          disabled={evalLoading}
+                          onClick={() => {
+                            setEvalLoading(true);
+                            evaluateModels()
+                              .then((resp) => setEvaluationData(resp.metrics))
+                              .catch((err) => {
+                                console.warn("Evaluate API failed, using mock data:", err);
+                                const mockEvals: ModelEvaluation[] = [
                                   {
-                                    id: "rule",
-                                    name: "规则引擎",
-                                    type: "规则引擎",
-                                    description: "基于业务经验的规则推导",
-                                    icon: "⚡",
-                                    requires_gpu: false,
-                                    estimated_latency_ms: 50,
-                                    version: {
-                                      weights_file: "rule_engine_v2.json",
-                                      weights_size_bytes: 12288,
-                                      training_date: "2026-04-15",
-                                      training_data_size: null,
-                                      val_loss: null,
+                                    model_id: "linear", model_name: "线性回归",
+                                    metrics: {
+                                      profit: { mae: 1250, rmse: 1890, mape_pct: 3.2 },
+                                      retention: { mae: 1.8, rmse: 2.4, mape_pct: 2.1 },
+                                      revenue: { mae: 2100, rmse: 3200, mape_pct: 2.8 },
+                                      cost: { mae: 980, rmse: 1450, mape_pct: 3.5 },
                                     },
+                                    avg_mae: 1332, training_data_size: 5000, training_date: "2026-05-01",
                                   },
                                   {
-                                    id: "linear",
-                                    name: "线性回归",
-                                    type: "传统ML",
-                                    description: "线性回归 + 多项式特征",
-                                    icon: "📈",
-                                    requires_gpu: false,
-                                    estimated_latency_ms: 200,
-                                    version: {
-                                      weights_file: "linear_v3.joblib",
-                                      weights_size_bytes: 245760,
-                                      training_date: "2026-05-01",
-                                      training_data_size: 5000,
-                                      val_loss: 0.0423,
+                                    model_id: "random_forest", model_name: "随机森林",
+                                    metrics: {
+                                      profit: { mae: 890, rmse: 1320, mape_pct: 2.1 },
+                                      retention: { mae: 1.2, rmse: 1.7, mape_pct: 1.4 },
+                                      revenue: { mae: 1560, rmse: 2340, mape_pct: 1.9 },
+                                      cost: { mae: 720, rmse: 1080, mape_pct: 2.3 },
                                     },
+                                    avg_mae: 1097, training_data_size: 8000, training_date: "2026-05-02",
                                   },
                                   {
-                                    id: "random_forest",
-                                    name: "随机森林",
-                                    type: "传统ML",
-                                    description: "集成树模型，抗过拟合",
-                                    icon: "🌲",
-                                    requires_gpu: false,
-                                    estimated_latency_ms: 300,
-                                    version: {
-                                      weights_file: "rf_v2.joblib",
-                                      weights_size_bytes: 1048576,
-                                      training_date: "2026-05-02",
-                                      training_data_size: 8000,
-                                      val_loss: 0.0287,
+                                    model_id: "lstm", model_name: "LSTM",
+                                    metrics: {
+                                      profit: { mae: 650, rmse: 980, mape_pct: 1.5 },
+                                      retention: { mae: 0.9, rmse: 1.3, mape_pct: 1.0 },
+                                      revenue: { mae: 1100, rmse: 1650, mape_pct: 1.3 },
+                                      cost: { mae: 520, rmse: 780, mape_pct: 1.7 },
                                     },
+                                    avg_mae: 772, training_data_size: 15000, training_date: "2026-05-03",
                                   },
                                   {
-                                    id: "lstm",
-                                    name: "LSTM",
-                                    type: "深度学习",
-                                    description: "时序记忆网络，捕捉长期依赖",
-                                    icon: "🧠",
-                                    requires_gpu: true,
-                                    estimated_latency_ms: 1000,
-                                    version: {
-                                      weights_file: "lstm_v1.pt",
-                                      weights_size_bytes: 47185920,
-                                      training_date: "2026-05-03",
-                                      training_data_size: 15000,
-                                      val_loss: 0.0156,
+                                    model_id: "transformer", model_name: "Transformer",
+                                    metrics: {
+                                      profit: { mae: 520, rmse: 780, mape_pct: 1.1 },
+                                      retention: { mae: 0.7, rmse: 1.0, mape_pct: 0.8 },
+                                      revenue: { mae: 890, rmse: 1340, mape_pct: 1.0 },
+                                      cost: { mae: 410, rmse: 620, mape_pct: 1.2 },
                                     },
-                                  },
-                                  {
-                                    id: "transformer",
-                                    name: "Transformer",
-                                    type: "深度学习",
-                                    description: "自注意力机制，全局建模",
-                                    icon: "🔮",
-                                    requires_gpu: true,
-                                    estimated_latency_ms: 1500,
-                                    version: {
-                                      weights_file: "transformer_v1.pt",
-                                      weights_size_bytes: 125829120,
-                                      training_date: "2026-05-04",
-                                      training_data_size: 20000,
-                                      val_loss: 0.0098,
-                                    },
+                                    avg_mae: 629, training_data_size: 20000, training_date: "2026-05-04",
                                   },
                                 ];
-                                setModelDetails(mockDetails);
-                              }
-                            })
-                            .catch((err) => console.error("Fetch details failed:", err))
-                            .finally(() => setDetailsLoading(false));
-                        }}
-                      >
-                        {detailsLoading ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Layers3 className="mr-2 h-4 w-4" />
-                        )}
-                        {detailsLoading ? "加载中..." : "加载版本信息"}
-                      </Button>
-
-                      {modelDetails.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3 }}
+                                setEvaluationData(mockEvals);
+                              })
+                              .finally(() => setEvalLoading(false));
+                          }}
                         >
-                          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="bg-slate-50">
-                                  <th className="px-4 py-3 text-left font-medium text-slate-700">模型</th>
-                                  <th className="px-4 py-3 text-left font-medium text-slate-700">类型</th>
-                                  <th className="px-4 py-3 text-left font-medium text-slate-700">权重文件</th>
-                                  <th className="px-4 py-3 text-right font-medium text-slate-700">大小</th>
-                                  <th className="px-4 py-3 text-left font-medium text-slate-700">训练日期</th>
-                                  <th className="px-4 py-3 text-right font-medium text-slate-700">数据量</th>
-                                  <th className="px-4 py-3 text-right font-medium text-slate-700">Val Loss</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {modelDetails.map((d) => {
-                                  const v = d.version;
-                                  const sizeStr = v ? (v.weights_size_bytes > 1048576
-                                    ? `${(v.weights_size_bytes / 1048576).toFixed(1)}MB`
-                                    : v.weights_size_bytes > 1024
-                                      ? `${(v.weights_size_bytes / 1024).toFixed(0)}KB`
-                                      : `${v.weights_size_bytes}B`
-                                  ) : "—";
-                                  return (
-                                    <tr key={d.id} className="border-t border-slate-100">
-                                      <td className="px-4 py-3 font-medium text-slate-900">{d.icon} {d.name}</td>
-                                      <td className="px-4 py-3 text-slate-600">
-                                        <span className={`rounded-full px-2 py-0.5 text-xs ${
-                                          d.type === "规则引擎" ? "bg-slate-100 text-slate-700" :
-                                          d.type === "传统ML" ? "bg-blue-100 text-blue-700" :
-                                          "bg-violet-100 text-violet-700"
-                                        }`}>{d.type}</span>
-                                      </td>
-                                      <td className="px-4 py-3 font-mono text-xs text-slate-600">{v?.weights_file || "—"}</td>
-                                      <td className="px-4 py-3 text-right text-slate-600">{sizeStr}</td>
-                                      <td className="px-4 py-3 text-slate-600">{v?.training_date || "—"}</td>
-                                      <td className="px-4 py-3 text-right text-slate-600">{v?.training_data_size?.toLocaleString() || "—"}</td>
-                                      <td className="px-4 py-3 text-right font-mono text-xs text-slate-600">{v?.val_loss != null ? v.val_loss.toFixed(6) : "—"}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </motion.div>
-                      )}
-                    </CardContent>
-                  </Card>
+                          {evalLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Target className="mr-2 h-4 w-4" />}
+                          {evalLoading ? "评估中..." : "运行评估"}
+                        </Button>
+
+                        {evaluationData && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="bg-slate-50">
+                                    <th className="px-3 py-2 text-left font-medium text-slate-700">模型</th>
+                                    <th className="px-3 py-2 text-right font-medium text-slate-700">利润 MAE</th>
+                                    <th className="px-3 py-2 text-right font-medium text-slate-700">留存 MAPE</th>
+                                    <th className="px-3 py-2 text-right font-medium text-slate-700">收入 MAPE</th>
+                                    <th className="px-3 py-2 text-right font-medium text-slate-700">平均 MAE</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {evaluationData.map((ev) => {
+                                    const isBest = ev.avg_mae === Math.min(...evaluationData.filter((e) => e.avg_mae != null).map((e) => e.avg_mae));
+                                    return (
+                                      <tr key={ev.model_id} className={`border-t border-slate-100 ${isBest ? "bg-emerald-50/50" : ""}`}>
+                                        <td className="px-3 py-2 font-medium text-slate-900">
+                                          {availableModels.find((m) => m.id === ev.model_id)?.icon} {ev.model_name}
+                                          {isBest && <span className="ml-1 text-[10px] text-emerald-600">★</span>}
+                                        </td>
+                                        <td className="px-3 py-2 text-right text-slate-700">¥ {ev.metrics.profit?.mae?.toLocaleString() || "—"}</td>
+                                        <td className="px-3 py-2 text-right text-slate-700">{ev.metrics.retention?.mape_pct?.toFixed(1) || "—"}%</td>
+                                        <td className="px-3 py-2 text-right text-slate-700">{ev.metrics.revenue?.mape_pct?.toFixed(1) || "—"}%</td>
+                                        <td className={`px-3 py-2 text-right font-semibold ${isBest ? "text-emerald-700" : "text-slate-700"}`}>
+                                          ¥ {ev.avg_mae?.toLocaleString() || "—"}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                            <p className="mt-2 text-[11px] text-slate-500">
+                              基准: 规则引擎 · 价格 ¥19 / 免费额度 12 / 廉价模型占比 65% / 质量目标 82 / 用户 1200 / 30 天
+                            </p>
+                          </motion.div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* 模型版本信息 */}
+                    <Card className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="text-base">模型版本信息</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <Button
+                          variant="outline"
+                          className="rounded-xl text-sm"
+                          disabled={detailsLoading}
+                          onClick={() => {
+                            setDetailsLoading(true);
+                            Promise.all(availableModels.map((m) => fetchModelDetail(m.id).catch(() => null)))
+                              .then((details) => {
+                                const valid = details.filter(Boolean) as ApiModelDetail[];
+                                if (valid.length > 0) {
+                                  setModelDetails(valid);
+                                } else {
+                                  const mockDetails: ApiModelDetail[] = [
+                                    {
+                                      id: "rule", name: "规则引擎", type: "规则引擎",
+                                      description: "基于业务经验的规则推导", icon: "⚡",
+                                      requires_gpu: false, estimated_latency_ms: 50,
+                                      version: {
+                                        weights_file: "rule_engine_v2.json", weights_size_bytes: 12288,
+                                        training_date: "2026-04-15", training_data_size: null, val_loss: null,
+                                      },
+                                    },
+                                    {
+                                      id: "linear", name: "线性回归", type: "传统ML",
+                                      description: "线性回归 + 多项式特征", icon: "📈",
+                                      requires_gpu: false, estimated_latency_ms: 200,
+                                      version: {
+                                        weights_file: "linear_v3.joblib", weights_size_bytes: 245760,
+                                        training_date: "2026-05-01", training_data_size: 5000, val_loss: 0.0423,
+                                      },
+                                    },
+                                    {
+                                      id: "random_forest", name: "随机森林", type: "传统ML",
+                                      description: "集成树模型，抗过拟合", icon: "🌲",
+                                      requires_gpu: false, estimated_latency_ms: 300,
+                                      version: {
+                                        weights_file: "rf_v2.joblib", weights_size_bytes: 1048576,
+                                        training_date: "2026-05-02", training_data_size: 8000, val_loss: 0.0287,
+                                      },
+                                    },
+                                    {
+                                      id: "lstm", name: "LSTM", type: "深度学习",
+                                      description: "时序记忆网络，捕捉长期依赖", icon: "🧠",
+                                      requires_gpu: true, estimated_latency_ms: 1000,
+                                      version: {
+                                        weights_file: "lstm_v1.pt", weights_size_bytes: 47185920,
+                                        training_date: "2026-05-03", training_data_size: 15000, val_loss: 0.0156,
+                                      },
+                                    },
+                                    {
+                                      id: "transformer", name: "Transformer", type: "深度学习",
+                                      description: "自注意力机制，全局建模", icon: "🔮",
+                                      requires_gpu: true, estimated_latency_ms: 1500,
+                                      version: {
+                                        weights_file: "transformer_v1.pt", weights_size_bytes: 125829120,
+                                        training_date: "2026-05-04", training_data_size: 20000, val_loss: 0.0098,
+                                      },
+                                    },
+                                  ];
+                                  setModelDetails(mockDetails);
+                                }
+                              })
+                              .catch((err) => console.error("Fetch details failed:", err))
+                              .finally(() => setDetailsLoading(false));
+                          }}
+                        >
+                          {detailsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Layers3 className="mr-2 h-4 w-4" />}
+                          {detailsLoading ? "加载中..." : "加载版本信息"}
+                        </Button>
+
+                        {modelDetails.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="bg-slate-50">
+                                    <th className="px-3 py-2 text-left font-medium text-slate-700">模型</th>
+                                    <th className="px-3 py-2 text-left font-medium text-slate-700">权重</th>
+                                    <th className="px-3 py-2 text-right font-medium text-slate-700">大小</th>
+                                    <th className="px-3 py-2 text-left font-medium text-slate-700">日期</th>
+                                    <th className="px-3 py-2 text-right font-medium text-slate-700">Val Loss</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {modelDetails.map((d) => {
+                                    const v = d.version;
+                                    const sizeStr = v ? (v.weights_size_bytes > 1048576
+                                      ? `${(v.weights_size_bytes / 1048576).toFixed(1)}MB`
+                                      : v.weights_size_bytes > 1024
+                                        ? `${(v.weights_size_bytes / 1024).toFixed(0)}KB`
+                                        : `${v.weights_size_bytes}B`
+                                    ) : "—";
+                                    return (
+                                      <tr key={d.id} className="border-t border-slate-100">
+                                        <td className="px-3 py-2 font-medium text-slate-900">{d.icon} {d.name}</td>
+                                        <td className="px-3 py-2 font-mono text-[11px] text-slate-600">{v?.weights_file || "—"}</td>
+                                        <td className="px-3 py-2 text-right text-slate-600">{sizeStr}</td>
+                                        <td className="px-3 py-2 text-slate-600">{v?.training_date || "—"}</td>
+                                        <td className="px-3 py-2 text-right font-mono text-[11px] text-slate-600">{v?.val_loss != null ? v.val_loss.toFixed(4) : "—"}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </motion.div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
