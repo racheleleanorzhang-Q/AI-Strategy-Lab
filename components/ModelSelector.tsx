@@ -1,8 +1,7 @@
 "use client";
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Zap, Brain, Cpu, AlertTriangle } from "lucide-react";
+import { Zap, Brain, Cpu, AlertTriangle, ChevronDown } from "lucide-react";
 import type { ApiModelInfo } from "@/lib/engine/apiClient";
 
 const typeIcons: Record<string, React.FC<{ className?: string }>> = {
@@ -24,6 +23,8 @@ export function ModelSelector({
   onSelect,
   loading = false,
 }: ModelSelectorProps) {
+  const selected = models.find((m) => m.id === selectedModel);
+
   if (models.length === 0) {
     return (
       <Card className="rounded-[32px] border border-amber-200 bg-amber-50 shadow-sm">
@@ -39,61 +40,35 @@ export function ModelSelector({
 
   return (
     <div className="space-y-3">
-      <div className="text-sm font-medium text-slate-700">选择模拟引擎</div>
-      <div className="grid gap-2">
-        {models.map((model) => {
-          const Icon = typeIcons[model.type] || Zap;
-          const isSelected = selectedModel === model.id;
-          return (
-            <button
-              key={model.id}
-              onClick={() => onSelect(model.id)}
-              disabled={loading}
-              className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-all ${
-                isSelected
-                  ? "border-indigo-400 bg-indigo-50 shadow-sm ring-1 ring-indigo-200"
-                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-              } ${loading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
-            >
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg ${
-                  isSelected ? "bg-indigo-100" : "bg-slate-100"
-                }`}
-              >
-                {model.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-sm font-semibold ${
-                      isSelected ? "text-indigo-900" : "text-slate-800"
-                    }`}
-                  >
-                    {model.name}
-                  </span>
-                  <Badge
-                    className={`rounded-lg text-[10px] px-2 py-0 ${
-                      model.type === "规则引擎"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : model.type === "传统ML"
-                        ? "bg-indigo-100 text-indigo-700"
-                        : "bg-purple-100 text-purple-700"
-                    }`}
-                  >
-                    {model.type}
-                  </Badge>
-                </div>
-                <div className="mt-0.5 text-xs text-slate-500 truncate">
-                  {model.description}
-                </div>
-              </div>
-              <div className="text-xs text-slate-400 shrink-0">
-                {model.estimated_latency_ms}ms
-              </div>
-            </button>
-          );
-        })}
+      <div className="text-sm font-medium text-slate-700">选择策略引擎</div>
+      <div className="relative">
+        <select
+          value={selectedModel}
+          onChange={(e) => onSelect(e.target.value)}
+          disabled={loading}
+          className={`w-full appearance-none rounded-2xl border px-4 py-3 pr-10 text-left text-sm transition-all focus:outline-none focus:ring-2 ${
+            loading
+              ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
+              : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 focus:border-indigo-400 focus:ring-indigo-100 cursor-pointer"
+          }`}
+        >
+          {models.map((model) => (
+            <option key={model.id} value={model.id}>
+              {model.icon} {model.name} · {model.type} · {model.estimated_latency_ms}ms
+            </option>
+          ))}
+        </select>
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+          <ChevronDown className="h-4 w-4 text-slate-400" />
+        </div>
       </div>
+      {selected && (
+        <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          <span>{selected.icon}</span>
+          <span className="flex-1">{selected.description}</span>
+          <span className="shrink-0 text-slate-400">{selected.estimated_latency_ms}ms</span>
+        </div>
+      )}
     </div>
   );
 }
