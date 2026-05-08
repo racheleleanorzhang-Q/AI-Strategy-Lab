@@ -1,6 +1,6 @@
 1:"$Sreact.fragment"
-2:I[76821,["/AI-Strategy-Lab/_next/static/chunks/0o~269zocnb95.js","/AI-Strategy-Lab/_next/static/chunks/0vfjkd.iz71hn.js"],"default"]
+2:I[76821,["/AI-Strategy-Lab/_next/static/chunks/0o~269zocnb95.js","/AI-Strategy-Lab/_next/static/chunks/0a8esmimujcun.js"],"default"]
 3:I[97367,["/AI-Strategy-Lab/_next/static/chunks/0o~269zocnb95.js"],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/AI-Strategy-Lab/_next/static/chunks/0vfjkd.iz71hn.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"cpmfRkNwyechDVdBjMzSL"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/AI-Strategy-Lab/_next/static/chunks/0a8esmimujcun.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"Tch-EEMbwPayyQx350YWm"}
 5:null
