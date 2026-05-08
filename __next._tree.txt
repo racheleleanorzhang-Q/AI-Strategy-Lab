@@ -1,2 +1,2 @@
 :HL["/AI-Strategy-Lab/_next/static/chunks/0gxaj._zfvx5x.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"H6kb6IB6cZs3Mu6nAwg7w"}
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"cpmfRkNwyechDVdBjMzSL"}
