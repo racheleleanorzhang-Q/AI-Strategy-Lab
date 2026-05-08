@@ -37,6 +37,8 @@ import { simulate, listEngines, ruleEngineInfo } from "@/lib/engine";
 import type { SimulationParams } from "@/lib/engine";
 
 // ── 后端 API 客户端 ──
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 import { ModelSelector } from "@/components/ModelSelector";
 import {
   fetchModels,

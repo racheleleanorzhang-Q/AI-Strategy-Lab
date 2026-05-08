@@ -72,7 +72,6 @@ export function ModelSelector({
                     {model.name}
                   </span>
                   <Badge
-                    variant="secondary"
                     className={`rounded-lg text-[10px] px-2 py-0 ${
                       model.type === "规则引擎"
                         ? "bg-emerald-100 text-emerald-700"
