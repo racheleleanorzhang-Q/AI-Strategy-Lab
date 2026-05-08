@@ -1,0 +1,7 @@
+{
+  "n_scenarios": 2000,
+  "train_sequences": 1700,
+  "val_sequences": 300,
+  "best_val_loss": 0.00815748404711485,
+  "epochs_trained": 50
+}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -29,11 +29,27 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  Loader2,
 } from "lucide-react";
 
 // ── 策略模拟引擎 (解耦后的独立模块) ──
 import { simulate, listEngines, ruleEngineInfo } from "@/lib/engine";
 import type { SimulationParams } from "@/lib/engine";
+
+// ── 后端 API 客户端 ──
+import { ModelSelector } from "@/components/ModelSelector";
+import {
+  fetchModels,
+  simulateApi,
+  compareModels,
+  evaluateModels,
+  fetchModelDetail,
+  type ApiModelInfo,
+  type ApiSimulateResponse,
+  type ApiCompareResult,
+  type ModelEvaluation,
+  type ApiModelDetail,
+} from "@/lib/engine/apiClient";
 
 const presets = {
   balanced: {
@@ -256,8 +272,141 @@ export default function StrategySimulatorP0Demo() {
   const [runVersion, setRunVersion] = useState(1);
   const [comparePreset, setComparePreset] = useState<keyof typeof presets>("premium");
 
-  const current = useMemo(() => simulate("rule", params as SimulationParams, 42 + runVersion), [params, runVersion]);
-  const comparison = useMemo(() => simulate("rule", presets[comparePreset] as SimulationParams, 84), [comparePreset]);
+  // ── 模型选择状态 ──
+  const [availableModels, setAvailableModels] = useState<ApiModelInfo[]>([]);
+  const [selectedModel, setSelectedModel] = useState("rule");
+  const [isLoading, setIsLoading] = useState(false);
+  const [modelExplanation, setModelExplanation] = useState("");
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // ── Step 5: 模型对比状态 ──
+  const [compareSelected, setCompareSelected] = useState<string[]>(["rule", "linear"]);
+  const [compareResults, setCompareResults] = useState<ApiCompareResult[] | null>(null);
+  const [isComparing, setIsComparing] = useState(false);
+  const [evaluationData, setEvaluationData] = useState<ModelEvaluation[] | null>(null);
+  const [evalLoading, setEvalLoading] = useState(false);
+  const [modelDetails, setModelDetails] = useState<ApiModelDetail[]>([]);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // 模型对比颜色映射
+  const modelColors: Record<string, string> = {
+    rule: "#64748b",
+    linear: "#3b82f6",
+    random_forest: "#10b981",
+    lstm: "#8b5cf6",
+    transformer: "#f59e0b",
+  };
+
+  // 从后端获取模型列表
+  useEffect(() => {
+    fetchModels()
+      .then((models) => {
+        setAvailableModels(models);
+        // 如果有线性模型，默认选中它
+        if (models.find((m) => m.id === "linear")) {
+          setSelectedModel("linear");
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch models, using rule engine only:", err);
+        setAvailableModels([
+          {
+            id: "rule",
+            name: "规则引擎",
+            type: "规则引擎",
+            description: "基于业务经验的规则推导",
+            icon: "⚡",
+            requires_gpu: false,
+            estimated_latency_ms: 50,
+          },
+        ]);
+      });
+  }, []);
+
+  // 将前端参数转换为后端 API 格式
+  const paramsToApi = useCallback((p: typeof presets.balanced) => ({
+    name: p.name,
+    price: p.price,
+    free_quota: p.freeQuota,
+    cheap_ratio: p.cheapRatio,
+    quality_target: p.qualityTarget,
+    user_count: p.userCount,
+    days: p.days,
+  }), []);
+
+  // 将后端 API 响应转换为前端格式
+  const apiResponseToResult = useCallback((resp: ApiSimulateResponse) => ({
+    summary: {
+      revenue: resp.summary.revenue,
+      cost: resp.summary.cost,
+      profit: resp.summary.profit,
+      retention: resp.summary.retention,
+      activeUsers: resp.summary.active_users,
+      avgRevenuePerUser: resp.summary.avg_revenue_per_user,
+      avgCostPerUser: resp.summary.avg_cost_per_user,
+      totalCalls: resp.summary.total_calls,
+      blendedCost: resp.summary.blended_cost,
+    },
+    history: resp.history.map((h) => ({
+      day: h.day,
+      activeUsers: h.active_users,
+      revenue: h.revenue,
+      cost: h.cost,
+      profit: h.profit,
+      cumulativeProfit: h.cumulative_profit,
+      calls: h.calls,
+    })),
+  }), []);
+
+  // 本地规则引擎模拟 (同步)
+  const currentLocal = useMemo(
+    () => simulate("rule", params as SimulationParams, 42 + runVersion),
+    [params, runVersion]
+  );
+  const comparison = useMemo(
+    () => simulate("rule", presets[comparePreset] as SimulationParams, 84),
+    [comparePreset]
+  );
+
+  // API 模拟 (异步) — 当选择非 rule 模型时覆盖 current
+  const [current, setCurrent] = useState(currentLocal);
+  const [explanation, setExplanation] = useState("");
+
+  useEffect(() => {
+    setCurrent(currentLocal);
+    setExplanation("");
+  }, [currentLocal]);
+
+  useEffect(() => {
+    if (selectedModel === "rule") return; // rule 引擎用本地同步计算
+
+    setIsLoading(true);
+    setApiError(null);
+    simulateApi({
+      model: selectedModel,
+      params: paramsToApi(params),
+    })
+      .then((resp) => {
+        setCurrent(apiResponseToResult(resp));
+        setModelExplanation(resp.explanation);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("API simulation failed:", err);
+        setApiError(err.message);
+        setCurrent(currentLocal); // fallback 到本地
+        setIsLoading(false);
+      });
+  }, [selectedModel, params, runVersion, paramsToApi, apiResponseToResult, currentLocal]);
+
+  // 触发重新模拟
+  const handleRunSimulation = useCallback(() => {
+    if (selectedModel === "rule") {
+      setRunVersion((v) => v + 1);
+    } else {
+      setRunVersion((v) => v + 1);
+    }
+  }, [selectedModel]);
 
   const comparisonBars = [
     { name: "当前策略", profit: current.summary.profit, retention: current.summary.retention },
@@ -466,6 +615,29 @@ export default function StrategySimulatorP0Demo() {
                 <CardTitle className="text-lg">策略参数台</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* ── 模型选择器 ── */}
+                <ModelSelector
+                  models={availableModels}
+                  selectedModel={selectedModel}
+                  onSelect={setSelectedModel}
+                  loading={isLoading}
+                />
+
+                {/* ── API 错误提示 ── */}
+                {apiError && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    ⚠️ API 调用失败: {apiError}，已回退到本地规则引擎
+                  </div>
+                )}
+
+                {/* ── 加载状态指示 ── */}
+                {isLoading && (
+                  <div className="flex items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-700">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    正在使用 {availableModels.find((m) => m.id === selectedModel)?.name || selectedModel} 模拟中...
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>策略名称</Label>
@@ -534,8 +706,13 @@ export default function StrategySimulatorP0Demo() {
                 />
 
                 <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                  <Button className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={() => setRunVersion((v) => v + 1)}>
-                    <Play className="mr-2 h-4 w-4" /> 运行模拟
+                  <Button className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={handleRunSimulation} disabled={isLoading}>
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Play className="mr-2 h-4 w-4" />
+                    )}
+                    {isLoading ? "模拟中..." : "运行模拟"}
                   </Button>
                   <Button variant="outline" className="rounded-2xl" onClick={() => setParams(presets.balanced)}>
                     <RotateCcw className="mr-2 h-4 w-4" /> 恢复默认
@@ -569,19 +746,20 @@ export default function StrategySimulatorP0Demo() {
             </div>
 
             <Tabs defaultValue="trend" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-slate-100 p-1">
+              <TabsList className="grid w-full grid-cols-4 rounded-2xl bg-slate-100 p-1">
                 <TabsTrigger value="trend" className="rounded-xl">趋势</TabsTrigger>
                 <TabsTrigger value="compare" className="rounded-xl">对比</TabsTrigger>
                 <TabsTrigger value="explain" className="rounded-xl">说明</TabsTrigger>
+                <TabsTrigger value="modelCompare" className="rounded-xl">模型对比</TabsTrigger>
               </TabsList>
 
               <TabsContent value="trend">
-                <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
+                <Card className="relative rounded-[32px] border border-slate-200 bg-white shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-lg">模拟趋势总览</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-[380px] w-full">
+                  <CardContent className="relative">
+                    <div className={`h-[380px] w-full transition-opacity ${isLoading ? "opacity-30" : "opacity-100"}`}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={current.history}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -596,6 +774,15 @@ export default function StrategySimulatorP0Demo() {
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
+                    {/* Loading overlay */}
+                    {isLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-[32px] bg-white/60 backdrop-blur-sm">
+                        <div className="flex flex-col items-center gap-3">
+                          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+                          <span className="text-sm text-slate-600">模型计算中...</span>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -662,7 +849,21 @@ export default function StrategySimulatorP0Demo() {
                   <CardHeader>
                     <CardTitle className="text-lg">模型解释层</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid gap-4 md:grid-cols-3">
+                  <CardContent className="space-y-4">
+                    {/* 模型特定解释 */}
+                    {modelExplanation && (
+                      <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
+                        <div className="flex items-center gap-2 text-sm font-medium text-indigo-900">
+                          <BrainCircuit className="h-4 w-4" />
+                          {availableModels.find((m) => m.id === selectedModel)?.name || "模型"} 推演
+                        </div>
+                        <p className="mt-2 text-sm leading-7 text-indigo-800 whitespace-pre-line">
+                          {modelExplanation}
+                        </p>
+                      </div>
+                    )}
+                    {/* 通用解释卡片 */}
+                    <div className="grid gap-4 md:grid-cols-3">
                     <div className="rounded-3xl border border-slate-200 p-5">
                       <div className="flex items-center gap-2 text-base font-medium text-slate-950"><Users className="h-4 w-4" /> 用户世界</div>
                       <p className="mt-3 text-sm leading-7 text-slate-600">
@@ -681,8 +882,277 @@ export default function StrategySimulatorP0Demo() {
                         输出收入、成本、利润、留存、活跃趋势,为策略讨论提供统一的量化语言。
                       </p>
                     </div>
+                    </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="modelCompare">
+                <div className="space-y-6">
+                  {/* ── 子区域 A: 多模型并排对比 ── */}
+                  <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-lg">多模型并排对比</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* 模型选择 */}
+                      <div className="flex flex-wrap gap-2">
+                        {availableModels.map((m) => (
+                          <button
+                            key={m.id}
+                            onClick={() => {
+                              setCompareSelected((prev) =>
+                                prev.includes(m.id)
+                                  ? prev.length > 1 ? prev.filter((id) => id !== m.id) : prev
+                                  : [...prev, m.id]
+                              );
+                            }}
+                            className={`rounded-2xl border px-4 py-2 text-sm font-medium transition ${
+                              compareSelected.includes(m.id)
+                                ? "border-slate-900 bg-slate-900 text-white"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            {m.icon} {m.name}
+                          </button>
+                        ))}
+                      </div>
+                      <Button
+                        className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800"
+                        disabled={isComparing || compareSelected.length < 2}
+                        onClick={() => {
+                          setIsComparing(true);
+                          setCompareResults(null);
+                          compareModels(compareSelected, paramsToApi(params))
+                            .then((resp) => setCompareResults(resp.results))
+                            .catch((err) => console.error("Compare failed:", err))
+                            .finally(() => setIsComparing(false));
+                        }}
+                      >
+                        {isComparing ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Layers3 className="mr-2 h-4 w-4" />
+                        )}
+                        {isComparing ? "对比中..." : "开始对比"}
+                      </Button>
+
+                      {/* 对比结果 */}
+                      {compareResults && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                        >
+                          {compareResults.map((r) => {
+                            const color = modelColors[r.model_id] || "#64748b";
+                            return (
+                              <Card key={r.model_id} className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                                <CardContent className="p-5">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-lg">{availableModels.find((m) => m.id === r.model_id)?.icon || "⚡"}</span>
+                                    <span className="font-semibold text-slate-950">{r.model_name}</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 mb-4">
+                                    <div className="rounded-2xl bg-slate-50 p-3">
+                                      <div className="text-xs text-slate-500">利润</div>
+                                      <div className="text-base font-semibold text-slate-950">¥ {r.summary.profit?.toLocaleString() || "—"}</div>
+                                    </div>
+                                    <div className="rounded-2xl bg-slate-50 p-3">
+                                      <div className="text-xs text-slate-500">留存</div>
+                                      <div className="text-base font-semibold text-slate-950">{r.summary.retention?.toFixed(1) || "—"}%</div>
+                                    </div>
+                                    <div className="rounded-2xl bg-slate-50 p-3">
+                                      <div className="text-xs text-slate-500">收入</div>
+                                      <div className="text-base font-semibold text-slate-950">¥ {r.summary.revenue?.toLocaleString() || "—"}</div>
+                                    </div>
+                                    <div className="rounded-2xl bg-slate-50 p-3">
+                                      <div className="text-xs text-slate-500">成本</div>
+                                      <div className="text-base font-semibold text-slate-950">¥ {r.summary.cost?.toLocaleString() || "—"}</div>
+                                    </div>
+                                  </div>
+                                  {r.history.length > 0 && (
+                                    <div className="h-[140px]">
+                                      <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={r.history}>
+                                          <defs>
+                                            <linearGradient id={`fill-${r.model_id}`} x1="0" y1="0" x2="0" y2="1">
+                                              <stop offset="5%" stopColor={color} stopOpacity={0.15} />
+                                              <stop offset="95%" stopColor={color} stopOpacity={0.01} />
+                                            </linearGradient>
+                                          </defs>
+                                          <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                                          <YAxis tick={{ fontSize: 10 }} />
+                                          <Tooltip />
+                                          <Area type="monotone" dataKey="cumulativeProfit" stroke={color} fill={`url(#fill-${r.model_id})`} strokeWidth={2} />
+                                        </AreaChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* ── 子区域 B: 精度评估 ── */}
+                  <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-lg">精度评估（vs 规则引擎基准）</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Button
+                        variant="outline"
+                        className="rounded-2xl"
+                        disabled={evalLoading}
+                        onClick={() => {
+                          setEvalLoading(true);
+                          evaluateModels()
+                            .then((resp) => setEvaluationData(resp.metrics))
+                            .catch((err) => console.error("Evaluate failed:", err))
+                            .finally(() => setEvalLoading(false));
+                        }}
+                      >
+                        {evalLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Target className="mr-2 h-4 w-4" />
+                        )}
+                        {evalLoading ? "评估中..." : "运行评估"}
+                      </Button>
+
+                      {evaluationData && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-slate-50">
+                                  <th className="px-4 py-3 text-left font-medium text-slate-700">模型</th>
+                                  <th className="px-4 py-3 text-right font-medium text-slate-700">利润 MAE</th>
+                                  <th className="px-4 py-3 text-right font-medium text-slate-700">利润 RMSE</th>
+                                  <th className="px-4 py-3 text-right font-medium text-slate-700">留存 MAPE</th>
+                                  <th className="px-4 py-3 text-right font-medium text-slate-700">收入 MAPE</th>
+                                  <th className="px-4 py-3 text-right font-medium text-slate-700">平均 MAE</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {evaluationData.map((ev, idx) => {
+                                  const isBest = ev.avg_mae === Math.min(...evaluationData.filter((e) => e.avg_mae != null).map((e) => e.avg_mae));
+                                  return (
+                                    <tr key={ev.model_id} className={`border-t border-slate-100 ${isBest ? "bg-emerald-50/50" : ""}`}>
+                                      <td className="px-4 py-3 font-medium text-slate-900">
+                                        {availableModels.find((m) => m.id === ev.model_id)?.icon} {ev.model_name}
+                                        {isBest && <span className="ml-1 text-xs text-emerald-600">★ 最优</span>}
+                                      </td>
+                                      <td className="px-4 py-3 text-right text-slate-700">¥ {ev.metrics.profit?.mae?.toLocaleString() || "—"}</td>
+                                      <td className="px-4 py-3 text-right text-slate-700">¥ {ev.metrics.profit?.rmse?.toLocaleString() || "—"}</td>
+                                      <td className="px-4 py-3 text-right text-slate-700">{ev.metrics.retention?.mape_pct?.toFixed(1) || "—"}%</td>
+                                      <td className="px-4 py-3 text-right text-slate-700">{ev.metrics.revenue?.mape_pct?.toFixed(1) || "—"}%</td>
+                                      <td className={`px-4 py-3 text-right font-semibold ${isBest ? "text-emerald-700" : "text-slate-700"}`}>
+                                        ¥ {ev.avg_mae?.toLocaleString() || "—"}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          <p className="mt-3 text-xs text-slate-500">
+                            基准: 规则引擎 · 评估参数: 价格 ¥19 / 免费额度 12 / 廉价模型占比 65% / 质量目标 82 / 用户 1200 / 30 天
+                          </p>
+                        </motion.div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* ── 子区域 C: 模型版本信息 ── */}
+                  <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-lg">模型版本信息</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Button
+                        variant="outline"
+                        className="rounded-2xl"
+                        disabled={detailsLoading}
+                        onClick={() => {
+                          setDetailsLoading(true);
+                          Promise.all(availableModels.map((m) => fetchModelDetail(m.id).catch(() => null)))
+                            .then((details) => setModelDetails(details.filter(Boolean) as ApiModelDetail[]))
+                            .catch((err) => console.error("Fetch details failed:", err))
+                            .finally(() => setDetailsLoading(false));
+                        }}
+                      >
+                        {detailsLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Layers3 className="mr-2 h-4 w-4" />
+                        )}
+                        {detailsLoading ? "加载中..." : "加载版本信息"}
+                      </Button>
+
+                      {modelDetails.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-slate-50">
+                                  <th className="px-4 py-3 text-left font-medium text-slate-700">模型</th>
+                                  <th className="px-4 py-3 text-left font-medium text-slate-700">类型</th>
+                                  <th className="px-4 py-3 text-left font-medium text-slate-700">权重文件</th>
+                                  <th className="px-4 py-3 text-right font-medium text-slate-700">大小</th>
+                                  <th className="px-4 py-3 text-left font-medium text-slate-700">训练日期</th>
+                                  <th className="px-4 py-3 text-right font-medium text-slate-700">数据量</th>
+                                  <th className="px-4 py-3 text-right font-medium text-slate-700">Val Loss</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {modelDetails.map((d) => {
+                                  const v = d.version;
+                                  const sizeStr = v ? (v.weights_size_bytes > 1048576
+                                    ? `${(v.weights_size_bytes / 1048576).toFixed(1)}MB`
+                                    : v.weights_size_bytes > 1024
+                                      ? `${(v.weights_size_bytes / 1024).toFixed(0)}KB`
+                                      : `${v.weights_size_bytes}B`
+                                  ) : "—";
+                                  return (
+                                    <tr key={d.id} className="border-t border-slate-100">
+                                      <td className="px-4 py-3 font-medium text-slate-900">{d.icon} {d.name}</td>
+                                      <td className="px-4 py-3 text-slate-600">
+                                        <span className={`rounded-full px-2 py-0.5 text-xs ${
+                                          d.type === "规则引擎" ? "bg-slate-100 text-slate-700" :
+                                          d.type === "传统ML" ? "bg-blue-100 text-blue-700" :
+                                          "bg-violet-100 text-violet-700"
+                                        }`}>{d.type}</span>
+                                      </td>
+                                      <td className="px-4 py-3 font-mono text-xs text-slate-600">{v?.weights_file || "—"}</td>
+                                      <td className="px-4 py-3 text-right text-slate-600">{sizeStr}</td>
+                                      <td className="px-4 py-3 text-slate-600">{v?.training_date || "—"}</td>
+                                      <td className="px-4 py-3 text-right text-slate-600">{v?.training_data_size?.toLocaleString() || "—"}</td>
+                                      <td className="px-4 py-3 text-right font-mono text-xs text-slate-600">{v?.val_loss != null ? v.val_loss.toFixed(6) : "—"}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </motion.div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           </div>

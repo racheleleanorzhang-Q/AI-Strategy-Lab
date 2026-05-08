@@ -99,15 +99,30 @@ from .rule_engine import RuleEngineModel
 # 注册规则引擎
 _model_registry[RuleEngineModel().info.id] = RuleEngineModel
 
-# Phase 3 时取消注释以下行:
-# from .linear_model import LinearModel
-# _model_registry[LinearModel().info.id] = LinearModel
-# 
-# from .tree_models import RandomForestModel
-# _model_registry[RandomForestModel().info.id] = RandomForestModel
-#
-# from .lstm_model import LSTMModel
-# _model_registry[LSTMModel().info.id] = LSTMModel
-#
-# from .transformer_model import TransformerModel
-# _model_registry[TransformerModel().info.id] = TransformerModel
+# Phase 3: 线性回归模型
+try:
+    from .linear_model import LinearModel
+    _model_registry[LinearModel().info.id] = LinearModel
+except ImportError:
+    pass  # scikit-learn 未安装时跳过
+
+# Phase 4: 随机森林模型
+try:
+    from .tree_models import RandomForestModel
+    _model_registry[RandomForestModel().info.id] = RandomForestModel
+except ImportError:
+    pass  # scikit-learn 未安装时跳过
+
+# Phase 4: LSTM 时序模型
+try:
+    from .lstm_model import LSTMModel
+    _model_registry[LSTMModel().info.id] = LSTMModel
+except ImportError:
+    pass  # torch 未安装时跳过
+
+# Phase 4: Transformer 模型
+try:
+    from .transformer_model import TransformerModel
+    _model_registry[TransformerModel().info.id] = TransformerModel
+except ImportError:
+    pass  # torch 未安装时跳过

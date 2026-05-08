@@ -1,0 +1,7 @@
+{
+  "n_scenarios": 3000,
+  "train_samples": 2550,
+  "val_samples": 450,
+  "best_val_loss": 0.05096608679741621,
+  "epochs_trained": 62
+}
