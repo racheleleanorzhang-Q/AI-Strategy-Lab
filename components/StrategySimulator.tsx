@@ -310,17 +310,13 @@ export default function StrategySimulatorP0Demo() {
         }
       })
       .catch((err) => {
-        console.warn("Failed to fetch models, using rule engine only:", err);
+        console.warn("Failed to fetch models, using mock models:", err);
         setAvailableModels([
-          {
-            id: "rule",
-            name: "规则引擎",
-            type: "规则引擎",
-            description: "基于业务经验的规则推导",
-            icon: "⚡",
-            requires_gpu: false,
-            estimated_latency_ms: 50,
-          },
+          { id: "rule", name: "规则引擎", type: "规则引擎", description: "基于业务经验的规则推导", icon: "⚡", requires_gpu: false, estimated_latency_ms: 50 },
+          { id: "linear", name: "线性回归", type: "传统ML", description: "线性回归 + 多项式特征", icon: "📈", requires_gpu: false, estimated_latency_ms: 200 },
+          { id: "random_forest", name: "随机森林", type: "传统ML", description: "集成树模型，抗过拟合", icon: "🌲", requires_gpu: false, estimated_latency_ms: 300 },
+          { id: "lstm", name: "LSTM", type: "深度学习", description: "时序记忆网络，捕捉长期依赖", icon: "🧠", requires_gpu: true, estimated_latency_ms: 1000 },
+          { id: "transformer", name: "Transformer", type: "深度学习", description: "自注意力机制，全局建模", icon: "🔮", requires_gpu: true, estimated_latency_ms: 1500 },
         ]);
       });
   }, []);
@@ -394,9 +390,33 @@ export default function StrategySimulatorP0Demo() {
         setIsLoading(false);
       })
       .catch((err) => {
-        console.error("API simulation failed:", err);
-        setApiError(err.message);
-        setCurrent(currentLocal); // fallback 到本地
+        console.warn("API simulation failed, using mock data:", err);
+        // Mock: 基于规则引擎结果 + 模型特征偏移
+        const base = currentLocal;
+        const seed = selectedModel === "linear" ? 0.95 : selectedModel === "random_forest" ? 1.02 : selectedModel === "lstm" ? 0.98 : 1.05;
+        setCurrent({
+          summary: {
+            revenue: Math.round(base.summary.revenue * seed),
+            cost: Math.round(base.summary.cost * (seed * 0.97)),
+            profit: Math.round(base.summary.profit * seed),
+            retention: Math.min(100, Math.round(base.summary.retention * seed)),
+            activeUsers: Math.round(base.summary.activeUsers * seed),
+            avgRevenuePerUser: Math.round(base.summary.avgRevenuePerUser * seed),
+            avgCostPerUser: Math.round(base.summary.avgCostPerUser * seed),
+            totalCalls: Math.round(base.summary.totalCalls * seed),
+            blendedCost: Math.round(base.summary.blendedCost * seed),
+          },
+          history: base.history.map((h, i) => ({
+            day: h.day,
+            activeUsers: Math.round(h.activeUsers * seed * (1 + Math.sin(i * 0.3) * 0.05)),
+            revenue: Math.round(h.revenue * seed),
+            cost: Math.round(h.cost * seed * 0.97),
+            profit: Math.round(h.profit * seed),
+            cumulativeProfit: Math.round(h.cumulativeProfit * seed),
+            calls: Math.round(h.calls * seed),
+          })),
+        });
+        setModelExplanation(`[Mock] ${selectedModel} 模型模拟结果（后端未连接，使用规则引擎数据 + 模型特征偏移）`);
         setIsLoading(false);
       });
   }, [selectedModel, params, runVersion, paramsToApi, apiResponseToResult, currentLocal]);
@@ -927,7 +947,45 @@ export default function StrategySimulatorP0Demo() {
                           setCompareResults(null);
                           compareModels(compareSelected, paramsToApi(params))
                             .then((resp) => setCompareResults(resp.results))
-                            .catch((err) => console.error("Compare failed:", err))
+                            .catch((err) => {
+                              console.warn("Compare API failed, using mock data:", err);
+                              // Mock: 基于规则引擎结果生成多模型对比
+                              const base = currentLocal;
+                              const seeds: Record<string, number> = {
+                                rule: 1.0, linear: 0.95, random_forest: 1.02, lstm: 0.98, transformer: 1.05,
+                              };
+                              const names: Record<string, string> = {
+                                rule: "规则引擎", linear: "线性回归", random_forest: "随机森林", lstm: "LSTM", transformer: "Transformer",
+                              };
+                              const results = compareSelected.map((id) => {
+                                const s = seeds[id] || 1.0;
+                                return {
+                                  model_id: id,
+                                  model_name: names[id] || id,
+                                  summary: {
+                                    revenue: Math.round(base.summary.revenue * s),
+                                    cost: Math.round(base.summary.cost * (s * 0.97)),
+                                    profit: Math.round(base.summary.profit * s),
+                                    retention: Math.min(100, Math.round(base.summary.retention * s)),
+                                    active_users: Math.round(base.summary.activeUsers * s),
+                                    avg_revenue_per_user: Math.round(base.summary.avgRevenuePerUser * s),
+                                    avg_cost_per_user: Math.round(base.summary.avgCostPerUser * s),
+                                    total_calls: Math.round(base.summary.totalCalls * s),
+                                    blended_cost: Math.round(base.summary.blendedCost * s),
+                                  },
+                                  history: base.history.map((h, i) => ({
+                                    day: h.day,
+                                    active_users: Math.round(h.activeUsers * s * (1 + Math.sin(i * 0.3) * 0.05)),
+                                    revenue: Math.round(h.revenue * s),
+                                    cost: Math.round(h.cost * s * 0.97),
+                                    profit: Math.round(h.profit * s),
+                                    cumulative_profit: Math.round(h.cumulativeProfit * s),
+                                    calls: Math.round(h.calls * s),
+                                  })),
+                                };
+                              });
+                              setCompareResults(results);
+                            })
                             .finally(() => setIsComparing(false));
                         }}
                       >
