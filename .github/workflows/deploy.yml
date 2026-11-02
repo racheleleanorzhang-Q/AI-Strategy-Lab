@@ -1,11 +1,9 @@
 name: Deploy to GitHub Pages
 
+# Pages 发布必须由维护者手动触发，避免 main 合并自动覆盖 gh-pages。
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
-# Grant write permission to GITHUB_TOKEN
 permissions:
   contents: write
 
@@ -21,6 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
 
       - name: Install dependencies
         run: npm install
