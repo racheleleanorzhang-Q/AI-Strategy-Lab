@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import StrategyExperiment from "./StrategyExperiment";
 import { ArrowLeft, ArrowRight, CarFront, Check, ChevronRight, CircleDollarSign, Clock3, Compass, Database, GitBranch, Home, Info, Route, ShieldCheck, Sparkles, Users } from "lucide-react";
 
 type Family = {
@@ -42,9 +43,9 @@ export default function PortfolioStrategyDemo() {
         </div>
         <div className="mx-auto grid max-w-[1440px] gap-8 px-5 pb-14 pt-10 lg:grid-cols-[1.2fr_.8fr] lg:px-8 lg:pb-16">
           <div>
-            <p className="mb-4 text-xs font-bold uppercase tracking-[0.26em] text-cyan-300">Portfolio Strategy · Phase 1</p>
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.26em] text-cyan-300">Portfolio Strategy · Phase 1 + 2</p>
             <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-[-0.035em] md:text-6xl">让每一个家庭的选择，<br /><span className="text-slate-500">成为组合经营的可解释变量。</span></h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-slate-400">以家庭 One ID × 用户旅程 × 当前车库 × 候选车型为基础粒度，连接产品、价格与权益变化到选择迁移。当前阶段聚焦业务世界与数字样本。</p>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-slate-400">以家庭 One ID × 用户旅程 × 当前车库 × 候选车型为基础粒度，连接产品、价格与权益变化到选择迁移。从业务世界与数字样本，进入新车型上市后的策略对照、Mock 仿真与家庭下钻。</p>
           </div>
           <div className="self-end rounded-3xl border border-white/10 bg-white/[0.055] p-6">
             <div className="flex items-center justify-between"><span className="text-sm font-medium">场景完整度</span><span className="text-xs text-cyan-300">迭代 0 + 1</span></div>
@@ -55,6 +56,8 @@ export default function PortfolioStrategyDemo() {
           </div>
         </div>
       </header>
+
+      <StrategyExperiment />
 
       <section className="mx-auto max-w-[1440px] px-5 py-14 lg:px-8">
         <div className="mb-7 flex items-end justify-between gap-6"><div><p className="section-kicker">01 · BUSINESS WORLD</p><h2 className="section-title">业务世界关系</h2></div><span className="hidden text-xs text-slate-500 md:block">从实体关系开始，而不是从一张结果报表开始</span></div>
