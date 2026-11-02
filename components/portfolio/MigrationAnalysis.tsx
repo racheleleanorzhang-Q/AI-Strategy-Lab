@@ -1,0 +1,15 @@
+import type { MovementKind, SimulationResult } from "@/lib/portfolio-simulation";
+
+const styles: Record<MovementKind, string> = { "真正新增": "bg-emerald-400", "内部蚕食": "bg-amber-400", "竞品抢夺": "bg-cyan-400", "延迟释放": "bg-violet-400", "保持": "bg-slate-400", "流失": "bg-rose-400" };
+const fmt = (n: number) => new Intl.NumberFormat("zh-CN").format(n);
+
+export default function MigrationAnalysis({ result }: { result: SimulationResult }) {
+  const groups = (["真正新增", "竞品抢夺", "延迟释放", "内部蚕食", "保持", "流失"] as MovementKind[]).map(movement => ({ movement, value: result.migrationFlows.filter(flow => flow.movement === movement).reduce((sum, flow) => sum + flow.households, 0) }));
+  const max = Math.max(...result.migrationFlows.map(flow => flow.households));
+  return <section className="rounded-3xl border border-slate-200 bg-white p-6 lg:p-8">
+    <div className="flex flex-wrap items-end justify-between gap-4"><div><span className="eyebrow">MIGRATION ACCOUNTING</span><h3 className="mt-2 text-xl font-semibold">家庭选择迁移与蚕食分析</h3><p className="mt-2 text-xs text-slate-400">左侧为基准选择，右侧为实验选择；连线宽度代表合成家庭权重。</p></div><div className="flex flex-wrap gap-2">{groups.map(item => <span key={item.movement} className="flex items-center gap-1.5 text-[10px] text-slate-500"><i className={`h-2 w-2 rounded-full ${styles[item.movement]}`}/>{item.movement} {fmt(item.value)}</span>)}</div></div>
+    <div className="mt-7 space-y-2">{result.migrationFlows.map((flow, index) => <div key={`${flow.from}-${flow.to}-${index}`} className="grid grid-cols-[minmax(90px,1fr)_minmax(110px,2fr)_minmax(90px,1fr)] items-center gap-3"><div className="truncate rounded-xl bg-slate-50 px-3 py-2 text-right text-[11px] font-medium">{flow.from}</div><div className="relative flex h-9 items-center"><div className="absolute left-0 right-0 h-px bg-slate-100"/><div className={`relative h-2 rounded-full opacity-80 ${styles[flow.movement]}`} style={{width:`${Math.max(16, flow.households / max * 100)}%`}}/><span className="absolute right-1 bg-white pl-2 text-[9px] text-slate-400">{fmt(flow.households)} 户 / {flow.share}%</span></div><div className="truncate rounded-xl bg-slate-950 px-3 py-2 text-[11px] font-medium text-white">{flow.to}</div></div>)}</div>
+    <div className="mt-6 grid gap-3 md:grid-cols-3"><Accounting label="外部增量" value={result.experiment.trueIncremental + result.experiment.competitorCapture + result.experiment.delayedRelease} note="新增 + 竞品 + 延迟" tone="text-emerald-600"/><Accounting label="内部蚕食" value={result.experiment.cannibalization} note="不计入组合净增" tone="text-amber-600"/><Accounting label="组合净变化" value={result.experiment.salesDelta} note="实验销量 − 基准销量" tone="text-cyan-700"/></div>
+  </section>;
+}
+function Accounting({label,value,note,tone}:{label:string;value:number;note:string;tone:string}) { return <div className="rounded-2xl bg-slate-50 p-4"><span className="text-[10px] text-slate-400">{label}</span><strong className={`mt-1 block text-xl ${tone}`}>{value >= 0 ? "+" : ""}{fmt(value)} 辆</strong><span className="text-[9px] text-slate-400">{note}</span></div> }
