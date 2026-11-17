@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[55800,["/AI-Strategy-Lab/phase-1/_next/static/chunks/01xlw8hd842-c.js","/AI-Strategy-Lab/phase-1/_next/static/chunks/0n4z.7yu76je-.js","/AI-Strategy-Lab/phase-1/_next/static/chunks/044jcuf74qfnb.js"],"default"]
+3:I[97367,["/AI-Strategy-Lab/phase-1/_next/static/chunks/01xlw8hd842-c.js","/AI-Strategy-Lab/phase-1/_next/static/chunks/0n4z.7yu76je-.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/AI-Strategy-Lab/phase-1/_next/static/chunks/044jcuf74qfnb.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"B_lrLhclKdXT8OyNjA58G"}
+5:null
