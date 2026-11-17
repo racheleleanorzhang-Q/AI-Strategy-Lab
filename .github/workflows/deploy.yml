@@ -1,8 +1,10 @@
-name: Deploy to GitHub Pages
+name: Recover and Deploy Phase 5
 
-# Pages 发布必须由维护者手动触发，避免 main 合并自动覆盖 gh-pages。
+# One-time recovery: restore the archived Pages tree, then replace only phase-5.
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -24,12 +26,25 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build
+      - name: Configure Phase 5 base path
+        run: |
+          sed -i 's#basePath: "/AI-Strategy-Lab"#basePath: "/AI-Strategy-Lab/phase-5"#' next.config.ts
+
+      - name: Build Phase 5
         run: npm run build
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: out
-          publish_branch: gh-pages
+      - name: Restore Pages archive and publish Phase 5
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git clone --branch gh-pages "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" published
+          cd published
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git revert --no-edit 7b38b1786b162f7c3c7f93b2e80e255f1b7acd96
+          rm -rf phase-5
+          mkdir phase-5
+          cp -a ../out/. phase-5/
+          git add -A
+          git commit -m "Deploy updated Phase 5 homepage"
+          git push origin gh-pages
