@@ -1,2 +1,2 @@
-:HL["/AI-Strategy-Lab/_next/static/chunks/0-5-79i1rrtdo.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"vlAPv6QmX5YnL6I8Nist7"}
+:HL["/AI-Strategy-Lab/_next/static/chunks/0nkgru7gmp_1r.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"rjAw3jnGw4KbYzOTkCcch"}
