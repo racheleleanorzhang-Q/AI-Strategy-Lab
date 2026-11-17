@@ -1,10 +1,7 @@
 name: Deploy to GitHub Pages
 
-# Temporary main trigger for the requested one-time publication.
+# Pages 发布必须由维护者手动触发，避免 main 合并自动覆盖 gh-pages。
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
